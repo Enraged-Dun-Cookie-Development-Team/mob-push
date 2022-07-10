@@ -25,6 +25,6 @@ impl PushEntity for String {
     type Identity = Self;
 
     fn get_identity(&self) -> &Self::Identity {
-        &self
+        self
     }
 }

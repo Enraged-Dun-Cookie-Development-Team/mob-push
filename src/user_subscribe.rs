@@ -2,6 +2,8 @@ use std::{future::Future, pin::Pin};
 
 use crate::PushEntity;
 
+type BoxResultFuture<T, E> = Pin<Box<dyn Future<Output = Result<T, E>> + Send + Sync>>;
+
 pub trait UserSubscribeManage {
     type UserIdentify: Sized + 'static;
     type PushData: PushEntity;
@@ -11,18 +13,18 @@ pub trait UserSubscribeManage {
     fn fetch_subscribe_filter(
         &self,
         user_id: &Self::UserIdentify,
-    ) -> Pin<Box<dyn Future<Output = Result<Self::Filter, Self::Err>> + Send + Sync>>;
+    ) -> BoxResultFuture<Self::Filter, Self::Err>;
 
     fn check_subscribed(
         &self,
         user_id: &Self::UserIdentify,
         data_group: &<Self::PushData as PushEntity>::Resource,
-    ) -> Pin<Box<dyn Future<Output = Result<bool, Self::Err>> + Send + Sync>>;
+    ) -> BoxResultFuture<bool, Self::Err>;
 
     fn fetch_all_subscriber(
         &self,
         data_group: &<Self::PushData as PushEntity>::Resource,
-    ) -> Pin<Box<dyn Future<Output = Result<Vec<Self::UserIdentify>, Self::Err>> + Send + Sync>>;
+    ) -> BoxResultFuture<Vec<Self::UserIdentify>, Self::Err>;
 }
 
 pub trait SubscribeFilter: 'static + Send + Sync {
