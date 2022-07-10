@@ -1,3 +1,4 @@
+mod config;
 
 mod pushing_data;
 mod user_config;
