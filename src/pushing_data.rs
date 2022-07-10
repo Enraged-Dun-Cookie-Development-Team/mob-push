@@ -3,11 +3,11 @@ use std::hash::Hash;
 use serde::Serialize;
 
 /// the trait of Entity for Push
-pub trait PushEntity: Serialize + 'static {
+pub trait PushEntity: Serialize + 'static + Sync + Send {
     /// the group this Entity belows
-    type Group: PartialEq + Hash + 'static + Clone + Eq + Sync + Send;
+    type Resource: PartialEq + Hash + 'static + Clone + Eq + Sync + Send;
 
-    fn get_group(&self) -> &Self::Group;
+    fn get_resource(&self) -> &Self::Resource;
 
     /// the Identity info of the entity
     type Identity: PartialEq + Hash + 'static + Clone + Eq + Sync + Send;
@@ -16,9 +16,9 @@ pub trait PushEntity: Serialize + 'static {
 }
 
 impl PushEntity for String {
-    type Group = i32;
+    type Resource = i32;
 
-    fn get_group(&self) -> &Self::Group {
+    fn get_resource(&self) -> &Self::Resource {
         &11
     }
 
