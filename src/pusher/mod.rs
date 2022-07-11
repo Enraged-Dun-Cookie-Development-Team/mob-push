@@ -1,5 +1,5 @@
-mod push_model;
 mod create_push;
+mod push_model;
 
 use tokio::sync::mpsc;
 

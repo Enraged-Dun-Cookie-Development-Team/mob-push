@@ -1,6 +1,5 @@
 mod app_info;
 
-
 use once_cell::sync::OnceCell;
 
 use self::app_info::App;
