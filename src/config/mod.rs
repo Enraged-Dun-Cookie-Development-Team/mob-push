@@ -7,14 +7,16 @@ use self::app_info::App;
 #[allow(dead_code)]
 static PUSHER_CONFIG: OnceCell<App> = OnceCell::new();
 
-#[cfg(debug_assertions)]
 #[cfg(test)]
 pub(crate) fn load_from_test() {
+    let app = load_cfg();
+    PUSHER_CONFIG.set(app).expect("Config set")
+}
+fn load_cfg() -> App {
     use std::{fs, path::Path};
     let vec = fs::read_to_string(Path::new("./config.toml")).expect("Config info not exist");
     let app = toml::from_str(&vec).expect("Parse to Toml Failure");
-
-    PUSHER_CONFIG.set(app).expect("Config set")
+    app
 }
 
 pub fn set_config(cfg: App) {
@@ -22,5 +24,16 @@ pub fn set_config(cfg: App) {
 }
 
 pub(crate) fn get_config() -> &'static App {
-    PUSHER_CONFIG.get().expect("Config Not Set")
+    #[cfg(test)]
+    {
+        PUSHER_CONFIG.get_or_init(load_cfg)
+    }
+    #[cfg(not(test))]
+    {
+        PUSHER_CONFIG.get().expect("Config Not Set")
+    }
+}
+
+pub fn load_config_from_default(){
+    PUSHER_CONFIG.set(load_cfg()).expect("Config Set");
 }

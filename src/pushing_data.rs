@@ -15,16 +15,3 @@ pub trait PushEntity: Serialize + 'static + Sync + Send {
     fn get_identity(&self) -> &Self::Identity;
 }
 
-impl PushEntity for String {
-    type Resource = i32;
-
-    fn get_resource(&self) -> &Self::Resource {
-        &11
-    }
-
-    type Identity = Self;
-
-    fn get_identity(&self) -> &Self::Identity {
-        self
-    }
-}

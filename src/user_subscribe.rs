@@ -2,7 +2,7 @@ use std::{future::Future, pin::Pin};
 
 use crate::PushEntity;
 
-type BoxResultFuture<T, E> = Pin<Box<dyn Future<Output = Result<T, E>> + Send + Sync>>;
+pub type BoxResultFuture<T, E> = Pin<Box<dyn Future<Output = Result<T, E>> + Send + Sync>>;
 
 pub trait UserSubscribeManage: 'static {
     type UserIdentify: UserMobId;
