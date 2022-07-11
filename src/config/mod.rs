@@ -15,8 +15,7 @@ pub(crate) fn load_from_test() {
 fn load_cfg() -> App {
     use std::{fs, path::Path};
     let vec = fs::read_to_string(Path::new("./config.toml")).expect("Config info not exist");
-    let app = toml::from_str(&vec).expect("Parse to Toml Failure");
-    app
+    toml::from_str(&vec).expect("Parse to Toml Failure")
 }
 
 pub fn set_config(cfg: App) {
