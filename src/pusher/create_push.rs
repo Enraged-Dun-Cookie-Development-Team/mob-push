@@ -43,17 +43,26 @@ impl<M: UserSubscribeManage> MobPusher<M> {
             };
 
             let serde_body = serde_json::to_vec(&body)?;
+
+            println!("body len {}", serde_body.len());
+
             let md5_vec = {
                 let mut temp = serde_body.clone();
                 temp.extend(get_config().secret.as_bytes());
                 temp
             };
+
+            println!("md5 len {}", md5_vec.len());
+
             let md5 = md5::compute(md5_vec);
+
+            println!("{md5:x}");
 
             // request
             let resp = client
                 .post("http://api.push.mob.com/v3/push/createPush")
                 .header("sign", &format!("{md5:x}"))
+                .body(serde_body)
                 .send()
                 .await?;
 
@@ -61,6 +70,8 @@ impl<M: UserSubscribeManage> MobPusher<M> {
             let resp = resp.bytes().await?;
 
             let resp: Respond = serde_json::from_slice(&resp)?;
+
+            println!("{resp:?}");
 
             match resp.status {
                 200 => {}

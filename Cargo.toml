@@ -6,9 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-tokio = { version = "1", features = ["sync", "time"] }
+tokio = { version = "1", features = ["sync", "time", "test-util", "macros"] }
 reqwest = { version = "0.11" }
 once_cell = "1.13.0"
 toml = "0.5"
 md5 = "0.7"
 serde_json = "1"
+
+[dev-dependencies]
+futures-util = "0.3.21"
