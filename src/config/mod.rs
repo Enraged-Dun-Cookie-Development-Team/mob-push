@@ -34,6 +34,6 @@ pub(crate) fn get_config() -> &'static App {
     }
 }
 
-pub fn load_config_from_default(){
+pub fn load_config_from_default() {
     PUSHER_CONFIG.set(load_cfg()).expect("Config Set");
 }

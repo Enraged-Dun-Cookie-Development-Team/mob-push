@@ -1,7 +1,8 @@
 use std::{convert::Infallible, time::Duration};
 
 use mob_push::{
-    self, BoxResultFuture, MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage, load_config_from_default,
+    self, load_config_from_default, BoxResultFuture, MobPusher, PushEntity, SubscribeFilter,
+    UserMobId, UserSubscribeManage,
 };
 use serde::{ser::SerializeStruct, Serialize};
 use tokio::time;
@@ -136,7 +137,7 @@ async fn test_push() {
     drop(sender);
 
     let err = time::timeout(Duration::from_millis(500), err_rx.recv()).await;
-    if let Ok(err) =err{
+    if let Ok(err) = err {
         println!("{err:?}")
     }
 

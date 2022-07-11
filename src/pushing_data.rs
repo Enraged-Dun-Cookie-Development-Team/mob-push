@@ -14,4 +14,3 @@ pub trait PushEntity: Serialize + 'static + Sync + Send {
 
     fn get_identity(&self) -> &Self::Identity;
 }
-
