@@ -4,11 +4,15 @@ use crate::PushEntity;
 
 type BoxResultFuture<T, E> = Pin<Box<dyn Future<Output = Result<T, E>> + Send + Sync>>;
 
-pub trait UserSubscribeManage {
-    type UserIdentify: Sized + 'static;
+pub trait UserSubscribeManage:'static {
+    type UserIdentify: Sized + 'static + Send + Sync;
     type PushData: PushEntity;
     type Filter: SubscribeFilter;
-    type Err: From<<Self::Filter as SubscribeFilter>::Err> + 'static;
+    type Err: From<<Self::Filter as SubscribeFilter>::Err>
+        + std::error::Error
+        + Send
+        + Sync
+        + 'static;
 
     fn fetch_subscribe_filter(
         &self,
