@@ -1,5 +1,5 @@
 mod app_info;
-use std::{fs, path::Path};
+
 
 use once_cell::sync::OnceCell;
 
@@ -9,7 +9,9 @@ use self::app_info::App;
 static PUSHER_CONFIG: OnceCell<App> = OnceCell::new();
 
 #[cfg(debug_assertions)]
+#[cfg(test)]
 pub(crate) fn load_from_test() {
+    use std::{fs, path::Path};
     let vec = fs::read_to_string(Path::new("./config.toml")).expect("Config info not exist");
     let app = toml::from_str(&vec).expect("Parse to Toml Failure");
 
