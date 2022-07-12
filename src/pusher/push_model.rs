@@ -1,4 +1,4 @@
-use std::any::TypeId;
+use std::{any::TypeId, borrow::Cow};
 
 use serde::{ser::SerializeStruct, Serialize};
 
@@ -48,6 +48,7 @@ where
     I: Serialize + 'static,
 {
     body: &'p str,
+    title: Cow<'p, str>,
     android_notify: &'p A,
     ios_notify: &'p I,
 }
@@ -58,6 +59,7 @@ impl<'p> PushNotify<'p> {
             body: data.get_send_content().as_ref(),
             android_notify: data.get_android_notify(),
             ios_notify: data.get_ios_notify(),
+            title: data.get_title(),
         }
     }
 }
@@ -71,7 +73,7 @@ where
     where
         S: serde::Serializer,
     {
-        let mut len = if cfg!(debug_assertions) { 4 } else { 3 };
+        let mut len = if cfg!(debug_assertions) { 5 } else { 4 };
         if TypeId::of::<A>() != TypeId::of::<()>() {
             len += 1;
         }
@@ -87,6 +89,8 @@ where
         }
         notify.serialize_field("content", &self.body)?;
         notify.serialize_field("type", &1)?;
+
+        notify.serialize_field("title", &self.title)?;
 
         if TypeId::of::<A>() != TypeId::of::<()>() {
             notify.serialize_field("androidNotify", &self.android_notify)?;
@@ -143,6 +147,8 @@ pub(crate) struct ResBody {
 
 #[cfg(test)]
 mod test_serde {
+    use std::borrow::Cow;
+
     use crate::config::load_from_test;
 
     use super::CreatePush;
@@ -159,6 +165,7 @@ mod test_serde {
                 body: &String::from(r#"{"aab":11}"#),
                 android_notify: &(),
                 ios_notify: &(),
+                title: Cow::Borrowed("12345"),
             },
         };
 

@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{borrow::Cow, hash::Hash};
 
 use serde::Serialize;
 
@@ -12,6 +12,10 @@ pub trait PushEntity: 'static + Sync + Send {
     type Content: AsRef<str> + 'static + Sync + ?Sized;
 
     fn get_send_content(&self) -> &Self::Content;
+
+    fn get_title<'s>(&'s self) -> Cow<'s, str> {
+        "新饼来袭".into()
+    }
 
     type AndroidNotify: Serialize + 'static + Sync;
 
