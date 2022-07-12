@@ -90,13 +90,13 @@ impl SubscribeFilter for Filter {
 
     type Err = Infallible;
 
-    fn filter(input: impl Iterator<Item = Self::Data>) -> Result<Vec<Self::Data>, Self::Err> {
+    fn filter(&self,input: impl Iterator<Item = Self::Data>) -> Result<Vec<Self::Data>, Self::Err> {
         Ok(input
             .filter(|data| data.get_resource() == &11 || data.get_resource() == &15)
             .collect())
     }
 
-    fn contains(target: &<Self::Data as PushEntity>::Resource) -> Result<bool, Self::Err> {
+    fn contains(&self,target: &<Self::Data as PushEntity>::Resource) -> Result<bool, Self::Err> {
         Ok(target == &11 || target == &15)
     }
 }
@@ -136,7 +136,7 @@ where
         _user_id: &Self::UserIdentify,
         data_resource: &<Self::PushData as PushEntity>::Resource,
     ) -> BoxResultFuture<bool, Self::Err> {
-        let resp = Filter::contains(data_resource);
+        let resp = Filter.contains(data_resource);
         Box::pin(async move { resp })
     }
 

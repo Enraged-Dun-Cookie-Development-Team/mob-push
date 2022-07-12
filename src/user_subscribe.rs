@@ -35,9 +35,10 @@ pub trait SubscribeFilter: 'static + Send + Sync {
     type Data: PushEntity;
     type Err: 'static;
 
-    fn filter(input: impl Iterator<Item = Self::Data>) -> Result<Vec<Self::Data>, Self::Err>;
+    fn filter(&self, input: impl Iterator<Item = Self::Data>)
+        -> Result<Vec<Self::Data>, Self::Err>;
 
-    fn contains(target: &<Self::Data as PushEntity>::Resource) -> Result<bool, Self::Err>;
+    fn contains(&self, target: &<Self::Data as PushEntity>::Resource) -> Result<bool, Self::Err>;
 }
 
 pub trait UserMobId: Sized + Send + Sync + 'static {
