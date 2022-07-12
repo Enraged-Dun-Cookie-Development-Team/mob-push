@@ -23,7 +23,7 @@ impl Serialize for IosPushSound {
         match self {
             IosPushSound::Default => serializer.serialize_str("default"),
             IosPushSound::None => serializer.serialize_none(),
-            IosPushSound::Custom(s) => serializer.serialize_str(&s),
+            IosPushSound::Custom(s) => serializer.serialize_str(s),
         }
     }
 }

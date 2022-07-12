@@ -55,6 +55,7 @@ impl<'ios, N: IosNotify> IosNotifyWrapper<'ios, N> {
         init
     }
 
+    #[allow(dead_code)]
     pub(super) fn need_serialize(&self) -> bool {
         self.need_felid() > 0
     }
@@ -95,7 +96,7 @@ impl<'ios, N: IosNotify> Serialize for IosNotifyWrapper<'ios, N> {
         }
 
         // content available
-        if let Some(_) = self.inner.content_available() {
+        if self.inner.content_available().is_some() {
             ios_notify.serialize_field("contentAvailable", &1)?;
         }
 

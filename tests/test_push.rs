@@ -2,7 +2,7 @@ use std::{
     convert::Infallible,
     fmt::Debug,
     marker::{PhantomData, Send, Sync},
-    time::{Duration, SystemTime},
+    time::Duration,
 };
 
 use mob_push::{
