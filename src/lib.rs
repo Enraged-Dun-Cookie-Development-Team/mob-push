@@ -1,6 +1,6 @@
-pub mod push_notify;
 mod config;
 mod error;
+pub mod push_notify;
 mod pusher;
 
 mod pushing_data;

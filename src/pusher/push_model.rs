@@ -167,7 +167,7 @@ mod test_serde {
             push_notify: super::PushNotify {
                 body: String::from(r#"{"aab":11}"#),
                 android_notify: &(),
-                ios_notify:&()
+                ios_notify: &(),
             },
         };
 

@@ -8,5 +8,3 @@ pub trait IosBadge {
         None
     }
 }
-
-

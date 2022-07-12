@@ -1,7 +1,7 @@
 use serde::{ser::SerializeStruct, Serialize};
 
 pub use self::{
-    apn::{ApnPush,IosPushSound},
+    apn::{ApnPush, IosPushSound},
     badge::{IosBadge, IosBadgeType},
     rich_text::{IosRichText, IosRichTextType},
 };
@@ -159,14 +159,12 @@ mod test {
 
     impl IosRichText for Test {}
 
-
     #[test]
     fn test() {
-        let wrap = IosNotifyWrapper{ inner: &Test };
-        
+        let wrap = IosNotifyWrapper { inner: &Test };
+
         let out = serde_json::to_string_pretty(&wrap).unwrap();
 
         println!("{out}")
     }
-
 }
