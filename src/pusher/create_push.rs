@@ -39,7 +39,11 @@ impl<M: UserSubscribeManage> MobPusher<M> {
             // request body
             let body = CreatePush {
                 push_target,
-                push_notify: PushNotify::new(&data)?,
+                push_notify: PushNotify::new(
+                    &data,
+                    data.get_android_notify(),
+                    data.get_ios_notify(),
+                )?,
             };
 
             let serde_body = serde_json::to_vec(&body)?;

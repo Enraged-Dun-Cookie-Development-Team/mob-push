@@ -5,12 +5,15 @@ use serde::Serialize;
 /// the trait of Entity for Push
 pub trait PushEntity: Serialize + 'static + Sync + Send {
     /// the group this Entity belows
-    type Resource: PartialEq + Hash + 'static + Clone + Eq + Sync + Send;
+    type Resource: PartialEq + Hash + 'static + Clone + Eq + Sync;
 
     fn get_resource(&self) -> &Self::Resource;
 
-    /// the Identity info of the entity
-    type Identity: PartialEq + Hash + 'static + Clone + Eq + Sync + Send;
+    type AndroidNotify: Serialize + 'static + Sync;
 
-    fn get_identity(&self) -> &Self::Identity;
+    fn get_android_notify(&self) -> &Self::AndroidNotify;
+
+    type IosNotify: Serialize + 'static + Sync;
+
+    fn get_ios_notify(&self) -> &Self::IosNotify;
 }

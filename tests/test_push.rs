@@ -8,19 +8,23 @@ use serde::{ser::SerializeStruct, Serialize};
 use tokio::time;
 
 #[derive(Debug)]
-struct TestMsg {
+struct TestMsg<A = (), I = ()> {
     id: String,
+    android:  A,
+    ios: I,
 }
 
 impl Default for TestMsg {
     fn default() -> Self {
         Self {
             id: String::from("test-1"),
+            android: (),
+            ios: (),
         }
     }
 }
 
-impl Serialize for TestMsg {
+impl<A, I> Serialize for TestMsg< A, I> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -35,17 +39,27 @@ impl Serialize for TestMsg {
     }
 }
 
-impl PushEntity for TestMsg {
+impl<A, I> PushEntity for TestMsg< A, I>
+where
+    A: Serialize + 'static + Send + Sync,
+    I: Serialize + 'static + Send + Sync,
+{
     type Resource = i32;
 
     fn get_resource(&self) -> &Self::Resource {
         &11
     }
 
-    type Identity = String;
+    type AndroidNotify = A;
 
-    fn get_identity(&self) -> &Self::Identity {
-        &self.id
+    fn get_android_notify(&self) -> &Self::AndroidNotify {
+        &self.android
+    }
+
+    type IosNotify = I;
+
+    fn get_ios_notify(&self) -> &Self::IosNotify {
+        &self.ios
     }
 }
 
