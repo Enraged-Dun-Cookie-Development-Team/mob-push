@@ -14,7 +14,6 @@ use tokio::time;
 
 #[derive(Debug)]
 struct TestMsg<A = (), I = ()> {
-    id: String,
     android: A,
     ios: I,
 }
@@ -22,7 +21,6 @@ struct TestMsg<A = (), I = ()> {
 impl Default for TestMsg {
     fn default() -> Self {
         Self {
-            id: String::from("test-1"),
             android: (),
             ios: (),
         }
@@ -31,19 +29,9 @@ impl Default for TestMsg {
 impl<A, I> TestMsg<A, I> {
     fn set_android<AN>(self, android: AN) -> TestMsg<AN, I> {
         TestMsg {
-            id: self.id,
             android,
             ios: self.ios,
         }
-    }
-}
-
-impl<A, I> Serialize for TestMsg<A, I> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(&format!("小刻食堂测试信息"))
     }
 }
 
@@ -69,6 +57,12 @@ where
     fn get_ios_notify(&self) -> &Self::IosNotify {
         &self.ios
     }
+
+    type Content = str;
+
+    fn get_send_content(&self) -> &Self::Content {
+        "小刻食堂测试信息"
+    }
 }
 
 struct User {
@@ -90,13 +84,16 @@ impl SubscribeFilter for Filter {
 
     type Err = Infallible;
 
-    fn filter(&self,input: impl Iterator<Item = Self::Data>) -> Result<Vec<Self::Data>, Self::Err> {
+    fn filter(
+        &self,
+        input: impl Iterator<Item = Self::Data>,
+    ) -> Result<Vec<Self::Data>, Self::Err> {
         Ok(input
             .filter(|data| data.get_resource() == &11 || data.get_resource() == &15)
             .collect())
     }
 
-    fn contains(&self,target: &<Self::Data as PushEntity>::Resource) -> Result<bool, Self::Err> {
+    fn contains(&self, target: &<Self::Data as PushEntity>::Resource) -> Result<bool, Self::Err> {
         Ok(target == &11 || target == &15)
     }
 }

@@ -15,13 +15,16 @@ static CLIENT: OnceCell<Client> = OnceCell::new();
 
 fn get_client() -> Result<&'static Client, reqwest::Error> {
     CLIENT.get_or_try_init(|| {
-        let mut headers = HeaderMap::new();
-        headers.append(
-            reqwest::header::CONTENT_TYPE,
-            "application/json".parse().unwrap(),
-        );
+        let headers = {
+            let mut map = HeaderMap::new();
+            map.append(
+                reqwest::header::CONTENT_TYPE,
+                "application/json".parse().unwrap(),
+            );
 
-        headers.append("key", get_config().key.parse().unwrap());
+            map.append("key", get_config().key.parse().unwrap());
+            map
+        };
 
         Client::builder().default_headers(headers).build()
     })
@@ -39,11 +42,7 @@ impl<M: UserSubscribeManage> MobPusher<M> {
             // request body
             let body = CreatePush {
                 push_target,
-                push_notify: PushNotify::new(
-                    &data,
-                    data.get_android_notify(),
-                    data.get_ios_notify(),
-                )?,
+                push_notify: PushNotify::new(&data),
             };
 
             let serde_body = serde_json::to_vec(&body)?;

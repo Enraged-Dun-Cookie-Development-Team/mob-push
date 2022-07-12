@@ -2,7 +2,7 @@ use std::any::TypeId;
 
 use serde::{ser::SerializeStruct, Serialize};
 
-use crate::{config::get_config, user_subscribe::UserMobId};
+use crate::{config::get_config, user_subscribe::UserMobId, PushEntity};
 
 pub struct PushTarget {
     pub target_user: Vec<String>,
@@ -47,27 +47,18 @@ where
     A: Serialize + 'static,
     I: Serialize + 'static,
 {
-    body: String,
+    body: &'p str,
     android_notify: &'p A,
     ios_notify: &'p I,
 }
 
-impl<'p, A, I> PushNotify<'p, A, I>
-where
-    A: Serialize + 'static,
-    I: Serialize + 'static,
-{
-    pub fn new<T: serde::Serialize>(
-        body: &T,
-        android: &'p A,
-        ios: &'p I,
-    ) -> Result<Self, serde_json::Error> {
-        let body = serde_json::to_string(body)?;
-        Ok(Self {
-            body,
-            android_notify: android,
-            ios_notify: ios,
-        })
+impl<'p> PushNotify<'p> {
+    pub fn new<T: PushEntity>(data: &'p T) -> PushNotify<'p, T::AndroidNotify, T::IosNotify> {
+        PushNotify {
+            body: data.get_send_content().as_ref(),
+            android_notify: data.get_android_notify(),
+            ios_notify: data.get_ios_notify(),
+        }
     }
 }
 
@@ -165,7 +156,7 @@ mod test_serde {
                 target_user: vec!["abc".to_string(), "cdde".to_string()],
             },
             push_notify: super::PushNotify {
-                body: String::from(r#"{"aab":11}"#),
+                body: &String::from(r#"{"aab":11}"#),
                 android_notify: &(),
                 ios_notify: &(),
             },
