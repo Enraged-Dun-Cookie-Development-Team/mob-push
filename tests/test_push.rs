@@ -34,6 +34,13 @@ impl<A, I> TestMsg<A, I> {
             ios: self.ios,
         }
     }
+
+    fn set_ios<IN>(self, ios: IN) -> TestMsg<A, IN> {
+        TestMsg {
+            android: self.android,
+            ios,
+        }
+    }
 }
 
 impl<A, I> PushEntity for TestMsg<A, I>
@@ -192,7 +199,6 @@ where
 }
 
 #[test]
-// #[ignore = "conflict action"]
 fn test_push() {
     test_pushing(TestMsg::default);
 }
@@ -341,3 +347,26 @@ fn test_custom_style() {
         })
     });
 }
+
+#[derive(Debug)]
+struct IosBadge;
+
+impl Serialize for IosBadge {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut badge = serializer.serialize_struct("IosNotify", 2)?;
+
+        badge.serialize_field("badge", &1)?;
+        badge.serialize_field("badgeType", &1)?;
+
+        badge.end()
+    }
+}
+
+#[test]
+fn test_ios_badge() {
+    test_pushing(||TestMsg::default().set_ios(IosBadge));
+}
+
