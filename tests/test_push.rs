@@ -18,6 +18,7 @@ struct TestMsg<A = (), I = ()> {
     ios: I,
 }
 
+#[allow(clippy::derivable_impls)]
 impl Default for TestMsg {
     fn default() -> Self {
         Self {
@@ -193,7 +194,7 @@ where
 #[test]
 // #[ignore = "conflict action"]
 fn test_push() {
-    test_pushing(|| TestMsg::default());
+    test_pushing(TestMsg::default);
 }
 
 #[derive(Debug)]
