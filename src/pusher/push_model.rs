@@ -73,7 +73,7 @@ where
     where
         S: serde::Serializer,
     {
-        let mut len = if cfg!(debug_assertions) { 5 } else { 4 };
+        let mut len = 4;
         if TypeId::of::<A>() != TypeId::of::<()>() {
             len += 1;
         }
@@ -84,9 +84,6 @@ where
         let mut notify = serializer.serialize_struct("PushNotify", len)?;
 
         notify.serialize_field("plats", &[1, 2])?;
-        if cfg!(debug_assertions) {
-            notify.serialize_field("iosProduction", &0)?;
-        }
         notify.serialize_field("content", &self.body)?;
         notify.serialize_field("type", &1)?;
 
