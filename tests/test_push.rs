@@ -7,7 +7,10 @@ use std::{
 
 use mob_push::{
     self, load_config_from_default,
-    push_notify::android::{sound::WarnSound, AndroidNotify, Badge, NotifyStyle},
+    push_notify::{
+        android::{sound::WarnSound, AndroidNotify, Badge, NotifyStyle},
+        SerializeInformation,
+    },
     BoxResultFuture, MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
 };
 use serde::{ser::SerializeStruct, Serialize};
@@ -383,7 +386,7 @@ fn test_android_notify_push() {
      .badge(Badge::new_add(1))
      .sound("114514".into())
      .warn(WarnSound::Prompt & WarnSound::IndicatorLight & WarnSound::Vibration)
-    .build();
+    .build().into_notify();
 
     test_pushing(|| TestMsg::default().set_android(notify))
 }

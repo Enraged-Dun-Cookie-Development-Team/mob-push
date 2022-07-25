@@ -1,5 +1,4 @@
 pub mod notify_style;
-use serde::{ser::SerializeStruct, Serialize};
 use typed_builder::TypedBuilder;
 
 pub use self::{
@@ -9,7 +8,7 @@ pub use self::{
     sound::{Sound, Warn},
 };
 
-use super::NotifySerialize;
+use super::{NotifySerialize, SerializeInformation};
 
 pub mod badge;
 pub mod image;
@@ -52,31 +51,38 @@ impl AndroidNotify {
     }
 }
 
-impl Serialize for AndroidNotify {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let fields = self.notify_style.serialize_field()
+impl SerializeInformation for AndroidNotify {
+    fn serialize_name() -> &'static str {
+        "androidNotify"
+    }
+}
+
+impl NotifySerialize for AndroidNotify {
+    fn serialize_field(&self) -> usize {
+        self.notify_style.serialize_field()
             + self.badge.serialize_field()
             + self.image.serialize_field()
             + self.sound.serialize_field()
-            + self.warn.serialize_field();
+            + self.warn.serialize_field()
+    }
 
-        let mut serialize_struct = serializer.serialize_struct("androidNotify", fields)?;
-
-        self.notify_style.serialize::<S>(&mut serialize_struct)?;
-        self.badge.serialize::<S>(&mut serialize_struct)?;
-        self.image.serialize::<S>(&mut serialize_struct)?;
-        self.sound.serialize::<S>(&mut serialize_struct)?;
-        self.warn.serialize::<S>(&mut serialize_struct)?;
-
-        serialize_struct.end()
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serialize_struct: &mut <S as serde::Serializer>::SerializeStruct,
+    ) -> Result<(), <S as serde::Serializer>::Error> {
+        self.notify_style.serialize::<S>(serialize_struct)?;
+        self.badge.serialize::<S>(serialize_struct)?;
+        self.image.serialize::<S>(serialize_struct)?;
+        self.sound.serialize::<S>(serialize_struct)?;
+        self.warn.serialize::<S>(serialize_struct)?;
+        Ok(())
     }
 }
 
 #[cfg(test)]
 mod test {
+    use crate::push_notify::{Notify, SerializeInformation};
+
     use super::{
         badge::Badge,
         notify_style::{CustomStyle, NotifyStyle, StyleId},
@@ -97,14 +103,14 @@ mod test {
         .warn(WarnSound::Prompt & WarnSound::IndicatorLight & WarnSound::Vibration)
         .build();
 
-        let string = serde_json::to_string_pretty(&notify).unwrap();
+        let string = serde_json::to_string_pretty(&Notify::new(notify)).unwrap();
 
         println!("{string}")
     }
 
     #[test]
     fn test_modify() {
-        let mut notify = AndroidNotify::default();
+        let mut notify = AndroidNotify::default().into_notify();
         notify
             .set_notify_style(NotifyStyle::Custom(
                 CustomStyle::builder().style(StyleId::One).build(),

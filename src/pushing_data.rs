@@ -2,6 +2,8 @@ use std::{borrow::Cow, hash::Hash};
 
 use serde::Serialize;
 
+use crate::push_notify::android::AndroidNotify;
+
 /// the trait of Entity for Push
 pub trait PushEntity: 'static + Sync + Send {
     /// the group this Entity belows
@@ -20,6 +22,8 @@ pub trait PushEntity: 'static + Sync + Send {
     type AndroidNotify: Serialize + 'static + Sync;
 
     fn get_android_notify(&self) -> &Self::AndroidNotify;
+
+    fn set_android_notify(&self, _notify: &mut AndroidNotify) {}
 
     type IosNotify: Serialize + 'static + Sync;
 
