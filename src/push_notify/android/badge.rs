@@ -10,15 +10,15 @@ pub enum Badge {
 
 impl Badge {
     ///角标数值取 `num` 值
-    /// 
+    ///
     /// ## Notify
     /// - 透传消息不支持
     pub fn new_set(num: u32) -> Self {
         Self::Set(num)
     }
-    
+
     ///角标数值为 `base` 当前值加1
-    /// 
+    ///
     /// ## Notify
     /// - 透传消息不支持
     pub fn new_add(base: u32) -> Self {

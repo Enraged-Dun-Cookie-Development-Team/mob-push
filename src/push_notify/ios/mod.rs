@@ -10,8 +10,6 @@ mod apn;
 mod badge;
 mod rich_text;
 
-
-
 pub trait IosNotify: IosRichText + ApnPush + IosBadge {
     fn subtitle(&self) -> Option<String> {
         None

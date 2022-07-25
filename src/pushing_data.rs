@@ -13,7 +13,7 @@ pub trait PushEntity: 'static + Sync + Send {
 
     fn get_send_content(&self) -> &Self::Content;
 
-    fn get_title<'s>(&'s self) -> Cow<'s, str> {
+    fn get_title(&self) -> Cow<'_, str> {
         "新饼来袭".into()
     }
 

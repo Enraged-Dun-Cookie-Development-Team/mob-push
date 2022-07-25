@@ -112,7 +112,7 @@ mod test {
             .set_badge(Badge::Add(1))
             .set_warn(WarnSound::Prompt & WarnSound::IndicatorLight);
 
-            let string = serde_json::to_string_pretty(&notify).unwrap();
+        let string = serde_json::to_string_pretty(&notify).unwrap();
 
         println!("{string}")
     }
