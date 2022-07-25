@@ -6,8 +6,9 @@ use std::{
 };
 
 use mob_push::{
-    self, load_config_from_default, BoxResultFuture, MobPusher, PushEntity, SubscribeFilter,
-    UserMobId, UserSubscribeManage,
+    self, load_config_from_default,
+    push_notify::android::{sound::WarnSound, AndroidNotify, Badge, NotifyStyle},
+    BoxResultFuture, MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
 };
 use serde::{ser::SerializeStruct, Serialize};
 use tokio::time;
@@ -373,6 +374,18 @@ fn test_custom_style() {
             custom_style: CustomStyle,
         })
     });
+}
+
+#[test]
+fn test_android_notify_push() {
+    let notify = AndroidNotify::builder()
+     .notify_style(NotifyStyle::new_big_vision("https://i0.hdslb.com/bfs/archive/94bdaa89d9e1775f04bdfb705512a61e5de70628.jpg@672w_378h_1c"))
+     .badge(Badge::new_add(1))
+     .sound("114514".into())
+     .warn(WarnSound::Prompt & WarnSound::IndicatorLight & WarnSound::Vibration)
+    .build();
+
+    test_pushing(|| TestMsg::default().set_android(notify))
 }
 
 #[derive(Debug)]
