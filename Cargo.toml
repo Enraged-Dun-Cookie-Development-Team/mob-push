@@ -8,7 +8,7 @@ edition = "2021"
 authors = ["FrozenString<frozenstringstable@gmail.com>"]
 documentation = "https://docs.rs/mob_push"
 repository = "https://github.com/Enraged-Dun-Cookie-Development-Team/mob-push"
-license = "AGPL-3.0"
+license-file = "LICENSE"
 keywords = ["MobPush", "Notify"]
 
 [dependencies]
