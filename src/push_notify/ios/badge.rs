@@ -1,7 +1,7 @@
 use serde::ser::SerializeStruct;
 
 use crate::push_notify::NotifySerialize;
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 /// 角标
 pub enum IosBadgeType {
     /// 绝对值，不能为负数

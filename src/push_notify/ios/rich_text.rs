@@ -1,7 +1,7 @@
 use serde::ser::SerializeStruct;
 
 use crate::push_notify::NotifySerialize;
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum IosRichTextType {
     None,
     Picture(String),

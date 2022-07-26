@@ -11,7 +11,7 @@ mod apn;
 mod badge;
 mod rich_text;
 
-#[derive(Debug, TypedBuilder, Default,Clone)]
+#[derive(Debug, TypedBuilder, Default, Clone)]
 #[builder(field_defaults(default, setter(strip_option)))]
 pub struct IosNotify {
     badge: Option<IosBadgeType>,

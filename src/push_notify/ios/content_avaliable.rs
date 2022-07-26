@@ -1,7 +1,7 @@
 use serde::ser::SerializeStruct;
 
 use crate::push_notify::NotifySerialize;
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 /// 表示有新的可用内容。
 ///  App 在后台启动了或恢复运行了，
 /// `application:didReceiveRemoteNotification:fetchCompletionHandler` 被调用了
