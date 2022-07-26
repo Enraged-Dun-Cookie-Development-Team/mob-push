@@ -8,6 +8,7 @@ use crate::{
     UserSubscribeManage,
 };
 
+/// mob push 推送器
 pub struct MobPusher<M: UserSubscribeManage> {
     manage: M,
     income_channel: mpsc::Receiver<M::PushData>,

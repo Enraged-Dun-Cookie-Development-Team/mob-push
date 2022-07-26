@@ -92,20 +92,20 @@ impl<M: UserSubscribeManage> MobPusher<M> {
     }
 
     pub async fn start_up(mut self) {
+        let mut timer = interval(Duration::from_millis(500));
         while let Some(data) = self.income_channel.recv().await {
-            let subscribers = self.manage.fetch_all_subscriber(data.get_resource());
-            let task = async move {
+            let error_sender = self.error_send.clone();
+            let task = async {
+                let subscribers = self.manage.fetch_all_subscriber(data.get_resource());
                 let subscribers = subscribers.await.map_err(MobPushError::Manage)?;
                 Self::pushing(data, subscribers.into_iter()).await?;
                 Result::<_, MobPushError<M>>::Ok(())
             };
-            let error_sender = self.error_send.clone();
-            tokio::spawn(async move {
-                match task.await {
-                    Ok(_) => {}
-                    Err(err) => error_sender.send(err).await.expect("Receive half closed"),
-                }
-            });
+            match task.await {
+                Ok(_) => {}
+                Err(err) => error_sender.send(err).await.expect("Receive half closed"),
+            }
+            timer.tick().await;
         }
     }
 }

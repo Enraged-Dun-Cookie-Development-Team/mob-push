@@ -1,13 +1,18 @@
 use crate::UserSubscribeManage;
 
+/// mob push 推送期间的异常
 pub enum MobPushError<M>
 where
     M: UserSubscribeManage,
 {
+    /// 用户订阅持久化管理出现的异常
     Manage(M::Err),
+    /// 发起请求时异常
     Reqwest(reqwest::Error),
-    Mob { state: u16, msg: String },
+    /// json 序列化、反序列化异常
     Json(serde_json::Error),
+    /// mob 推送响应异常
+    Mob { state: u16, msg: String },
 }
 
 impl<M> std::fmt::Debug for MobPushError<M>

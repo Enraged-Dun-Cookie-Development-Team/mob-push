@@ -1,4 +1,3 @@
-#![allow(deprecated)]
 use std::{
     convert::Infallible,
     fmt::Debug,
@@ -12,7 +11,7 @@ use mob_push::{
         android::{sound::WarnSound, AndroidNotify, Badge, Image, NotifyStyle},
         ios::{IosBadgeType, IosNotify, IosPushSound, IosRichTextType},
     },
-    BoxResultFuture, MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
+    MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
 };
 use tokio::time;
 
@@ -120,6 +119,7 @@ impl SubscribeFilter for Filter {
 
 struct Manage;
 
+#[async_trait::async_trait]
 impl UserSubscribeManage for Manage {
     type UserIdentify = User;
 
@@ -129,26 +129,26 @@ impl UserSubscribeManage for Manage {
 
     type Err = Infallible;
 
-    fn fetch_subscribe_filter(
+    async fn fetch_subscribe_filter(
         &self,
         _user_id: &Self::UserIdentify,
-    ) -> BoxResultFuture<Self::Filter, Self::Err> {
-        Box::pin(async { Ok(Filter) })
+    ) -> Result<Self::Filter, Self::Err> {
+        Ok(Filter)
     }
 
-    fn check_subscribed(
+    async fn check_subscribed(
         &self,
         _user_id: &Self::UserIdentify,
         data_resource: &<Self::PushData as PushEntity>::Resource,
-    ) -> BoxResultFuture<bool, Self::Err> {
+    ) -> Result<bool, Self::Err> {
         let resp = Filter.contains(data_resource);
-        Box::pin(async move { resp })
+        resp
     }
 
-    fn fetch_all_subscriber(
+    async fn fetch_all_subscriber(
         &self,
         data_resource: &<Self::PushData as PushEntity>::Resource,
-    ) -> BoxResultFuture<Vec<Self::UserIdentify>, Self::Err> {
+    ) -> Result<Vec<Self::UserIdentify>, Self::Err> {
         let resp = if data_resource == &11 || data_resource == &15 {
             vec![
                 User {
@@ -165,7 +165,7 @@ impl UserSubscribeManage for Manage {
             vec![]
         };
 
-        Box::pin(async move { Ok(resp) })
+        Ok(resp)
     }
 }
 

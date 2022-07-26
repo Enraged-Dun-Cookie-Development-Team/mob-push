@@ -1,5 +1,5 @@
 #[derive(Debug, serde::Deserialize)]
-pub struct App {
-    pub(crate) key: String,
-    pub(crate) secret: String,
+pub struct MobPushConfig {
+    pub key: String,
+    pub secret: String,
 }
