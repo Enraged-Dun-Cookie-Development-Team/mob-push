@@ -11,6 +11,9 @@ repository = "https://github.com/Enraged-Dun-Cookie-Development-Team/mob-push"
 license-file = "LICENSE"
 keywords = ["MobPush", "Notify"]
 
+[package.metadata.docs.rs]
+rustdoc-args = ["--cfg", "docsrs"]
+
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["sync", "time", "test-util", "macros"] }
