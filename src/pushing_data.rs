@@ -2,30 +2,41 @@ use std::{borrow::Cow, hash::Hash};
 
 use serde::Serialize;
 
-use crate::push_notify::android::AndroidNotify;
+use crate::push_notify::{android::AndroidNotify, ios::IosNotify};
 
 /// the trait of Entity for Push
 pub trait PushEntity: 'static + Sync + Send {
     /// the group this Entity belows
     type Resource: PartialEq + Hash + 'static + Clone + Eq + Sync;
-
+    /// 获取当前消息源的来源
     fn get_resource(&self) -> &Self::Resource;
 
+    /// 获取当前推送消息的推送正文
     type Content: AsRef<str> + 'static + Sync + ?Sized;
 
     fn get_send_content(&self) -> &Self::Content;
 
+    /// 获取当前推送消息的标题
     fn get_title(&self) -> Cow<'_, str> {
         "新饼来袭".into()
     }
+    /// 获取当前推送消息的安卓端配置
+    fn android_notify(&self, _notify: &mut AndroidNotify) {}
 
-    type AndroidNotify: Serialize + 'static + Sync;
+    /// 获取当前推送消息的Ios端配置
+    fn ios_notify(&self, _notify: &mut IosNotify) {}
 
-    fn get_android_notify(&self) -> &Self::AndroidNotify;
-
-    fn set_android_notify(&self, _notify: &mut AndroidNotify) {}
-
-    type IosNotify: Serialize + 'static + Sync;
-
-    fn get_ios_notify(&self) -> &Self::IosNotify;
+    #[deprecated]
+    type AndroidNotify: Serialize + 'static + Sync + Send;
+    
+    #[allow(deprecated)]
+    #[deprecated]
+    fn get_android_notify(&self) -> Self::AndroidNotify;
+    
+    #[deprecated]
+    type IosNotify: Serialize + 'static + Sync + Send;
+    
+    #[allow(deprecated)]
+    #[deprecated]
+    fn get_ios_notify(&self) -> Self::IosNotify;
 }

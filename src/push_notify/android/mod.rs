@@ -14,7 +14,7 @@ pub mod badge;
 pub mod image;
 pub mod sound;
 
-#[derive(Debug, TypedBuilder, Default)]
+#[derive(Debug, TypedBuilder, Default, Clone)]
 #[builder(field_defaults(default, setter(strip_option)))]
 pub struct AndroidNotify {
     notify_style: Option<NotifyStyle>,

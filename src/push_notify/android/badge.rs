@@ -1,7 +1,7 @@
 use serde::ser::SerializeStruct;
 
 use crate::push_notify::NotifySerialize;
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 
 pub enum Badge {
     Set(u32),

@@ -42,7 +42,8 @@ pub trait SerializeInformation: NotifySerialize + Sized {
     }
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 pub struct Notify<N>(N);
 
 impl<N> DerefMut for Notify<N> {

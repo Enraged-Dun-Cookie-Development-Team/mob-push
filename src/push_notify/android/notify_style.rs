@@ -3,7 +3,7 @@ use typed_builder::TypedBuilder;
 
 use crate::push_notify::NotifySerialize;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum NotifyStyle {
     Default,
     LongContent(String),
@@ -61,7 +61,7 @@ impl NotifyStyle {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum StyleId {
     // 1 样式1
     One,
@@ -90,7 +90,7 @@ impl StyleId {
     }
 }
 
-#[derive(Debug, Serialize, TypedBuilder)]
+#[derive(Debug, Serialize, TypedBuilder, Clone)]
 #[builder(field_defaults(default, setter(strip_option)))]
 pub struct CustomStyle {
     /// 样式序号

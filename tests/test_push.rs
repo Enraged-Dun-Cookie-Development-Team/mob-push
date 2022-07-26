@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use std::{
     convert::Infallible,
     fmt::Debug,
@@ -49,8 +50,8 @@ impl<A, I> TestMsg<A, I> {
 
 impl<A, I> PushEntity for TestMsg<A, I>
 where
-    A: Serialize + 'static + Send + Sync,
-    I: Serialize + 'static + Send + Sync,
+    A: Serialize + 'static + Send + Sync + Clone,
+    I: Serialize + 'static + Send + Sync + Clone,
 {
     type Resource = i32;
 
@@ -60,14 +61,14 @@ where
 
     type AndroidNotify = A;
 
-    fn get_android_notify(&self) -> &Self::AndroidNotify {
-        &self.android
+    fn get_android_notify(&self) -> Self::AndroidNotify {
+        self.android.clone()
     }
 
     type IosNotify = I;
 
-    fn get_ios_notify(&self) -> &Self::IosNotify {
-        &self.ios
+    fn get_ios_notify(&self) -> Self::IosNotify {
+        self.ios.clone()
     }
 
     type Content = str;
@@ -122,8 +123,8 @@ impl<A, I> Manage<A, I> {
 
 impl<A, I> UserSubscribeManage for Manage<A, I>
 where
-    A: Serialize + 'static + Send + Sync,
-    I: Serialize + 'static + Send + Sync,
+    A: Serialize + 'static + Send + Sync + Clone,
+    I: Serialize + 'static + Send + Sync + Clone,
 {
     type UserIdentify = User;
 
@@ -175,8 +176,8 @@ where
 
 fn test_pushing<A, I, F>(msg: F)
 where
-    A: Serialize + Sync + Send + 'static + Debug,
-    I: Serialize + Send + Sync + 'static + Debug,
+    A: Serialize + Sync + Send + 'static + Debug + Clone,
+    I: Serialize + Send + Sync + 'static + Debug + Clone,
     F: FnOnce() -> TestMsg<A, I>,
 {
     load_config_from_default();
@@ -210,7 +211,7 @@ fn test_push() {
     test_pushing(TestMsg::default);
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct AndroidBadge;
 
 impl Serialize for AndroidBadge {
@@ -234,7 +235,8 @@ fn test_android_badge() {
     test_pushing(|| TestMsg::default().set_android(AndroidBadge));
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct AndroidWarn;
 
 impl Serialize for AndroidWarn {
@@ -255,7 +257,8 @@ fn test_android_warn() {
 }
 
 /// 使用image 推送可行
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct AndroidIcon;
 
 impl Serialize for AndroidIcon {
@@ -292,7 +295,8 @@ fn test_icon() {
 /// 可以传递多个，每个独立一行
 /// 会隐藏原有content
 ///
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct AndroidStyle;
 
 impl Serialize for AndroidStyle {
@@ -330,7 +334,8 @@ fn test_style() {
     test_pushing(|| TestMsg::default().set_android(AndroidStyle));
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct Wrapper {
     custom_style: CustomStyle,
 }
@@ -351,7 +356,8 @@ impl Serialize for Wrapper {
 /// 用户定义的样式
 /// 不知道啥用
 /// 测试与普通推送几乎无区别
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct CustomStyle;
 
 impl Serialize for CustomStyle {
@@ -391,7 +397,8 @@ fn test_android_notify_push() {
     test_pushing(|| TestMsg::default().set_android(notify))
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct IosBadge;
 
 impl Serialize for IosBadge {
@@ -413,7 +420,8 @@ fn test_ios_badge() {
     test_pushing(|| TestMsg::default().set_ios(IosBadge));
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct IosSubTitle;
 
 impl Serialize for IosSubTitle {
@@ -434,7 +442,8 @@ fn test_ios_subtitle() {
     test_pushing(|| TestMsg::default().set_ios(IosSubTitle))
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct IosSound;
 
 impl Serialize for IosSound {
@@ -455,7 +464,8 @@ fn test_ios_no_sound() {
     test_pushing(|| TestMsg::default().set_ios(IosSound))
 }
 
-#[derive(Debug)]
+
+#[derive(Debug,Clone)]
 struct RichText;
 
 impl Serialize for RichText {

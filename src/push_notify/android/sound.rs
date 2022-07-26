@@ -3,7 +3,7 @@ use std::ops::BitAnd;
 use serde::ser::SerializeStruct;
 
 use crate::push_notify::NotifySerialize;
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 /// 自定义声音
 pub struct Sound(pub String);
@@ -26,7 +26,7 @@ impl NotifySerialize for Sound {
         struct_serialize.serialize_field("sound", &self.0)
     }
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 /// 提示音类型
 pub enum WarnSound {
@@ -66,7 +66,7 @@ impl WarnSound {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 
 /// 提醒类型，可多选组合
 pub struct Warn(pub Vec<WarnSound>);

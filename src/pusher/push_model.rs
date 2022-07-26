@@ -2,7 +2,12 @@ use std::{any::TypeId, borrow::Cow};
 
 use serde::{ser::SerializeStruct, Serialize};
 
-use crate::{config::get_config, user_subscribe::UserMobId, PushEntity};
+use crate::{
+    config::get_config,
+    push_notify::{android::AndroidNotify, ios::IosNotify, Notify, SerializeInformation},
+    user_subscribe::UserMobId,
+    PushEntity,
+};
 
 pub struct PushTarget {
     pub target_user: Vec<String>,
@@ -28,7 +33,7 @@ impl PushTarget {
     }
 }
 
-impl serde::Serialize for PushTarget {
+impl Serialize for PushTarget {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -49,11 +54,13 @@ where
 {
     body: &'p str,
     title: Cow<'p, str>,
-    android_notify: &'p A,
-    ios_notify: &'p I,
+    android_notify: A,
+    ios_notify: I,
 }
 
 impl<'p> PushNotify<'p> {
+    #[allow(deprecated)]
+    #[deprecated]
     pub fn new<T: PushEntity>(data: &'p T) -> PushNotify<'p, T::AndroidNotify, T::IosNotify> {
         PushNotify {
             body: data.get_send_content().as_ref(),
@@ -64,7 +71,23 @@ impl<'p> PushNotify<'p> {
     }
 }
 
-impl<'p, A, I> serde::Serialize for PushNotify<'p, A, I>
+impl<'p> PushNotify<'p, Notify<AndroidNotify>, Notify<IosNotify>> {
+    pub fn new_with_builder<T: PushEntity>(data: &'p T) -> Self {
+        let mut android_notify = AndroidNotify::default().into_notify();
+        data.android_notify(&mut android_notify);
+        let mut ios_notify = IosNotify::default().into_notify();
+        data.ios_notify(&mut ios_notify);
+
+        Self {
+            body: data.get_send_content().as_ref(),
+            title: data.get_title(),
+            android_notify,
+            ios_notify,
+        }
+    }
+}
+
+impl<'p, A, I> Serialize for PushNotify<'p, A, I>
 where
     A: Serialize + 'static,
     I: Serialize + 'static,
@@ -109,7 +132,7 @@ where
     pub push_notify: PushNotify<'p, A, I>,
 }
 
-impl<'p, A, I> serde::Serialize for CreatePush<'p, A, I>
+impl<'p, A, I> Serialize for CreatePush<'p, A, I>
 where
     A: Serialize + 'static,
     I: Serialize + 'static,

@@ -2,7 +2,7 @@ use serde::{ser::SerializeStruct, Serialize};
 
 use crate::push_notify::NotifySerialize;
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 /// APNs的category字段，只有IOS8及以上系统才支持此参数推送
 pub struct Category(pub String);
 
@@ -24,7 +24,7 @@ impl NotifySerialize for Category {
         struct_serialize.serialize_field("category", &self.0)
     }
 }
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 /// APNs通知，通过这个字段指定声音，
 /// - 默认为default（系统默认声音）
 /// - 如设置为空值则为静音。
