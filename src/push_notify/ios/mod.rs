@@ -1,170 +1,106 @@
-use serde::{ser::SerializeStruct, Serialize};
+pub mod content_avaliable;
+pub mod subtitle;
+use typed_builder::TypedBuilder;
 
-pub use self::{
-    apn::{ApnPush, IosPushSound},
-    badge::{IosBadge, IosBadgeType},
-    rich_text::{IosRichText, IosRichTextType},
-};
+use self::{apn::Category, content_avaliable::ContentAvailable, subtitle::Subtitle};
+pub use self::{apn::IosPushSound, badge::IosBadgeType, rich_text::IosRichTextType};
+
+use super::{NotifySerialize, SerializeInformation};
 
 mod apn;
 mod badge;
 mod rich_text;
 
-pub trait IosNotify: IosRichText + ApnPush + IosBadge {
-    fn subtitle(&self) -> Option<String> {
-        None
+#[derive(Debug, TypedBuilder, Default)]
+#[builder(field_defaults(default, setter(strip_option)))]
+pub struct IosNotify {
+    badge: Option<IosBadgeType>,
+    category: Option<Category>,
+    sound: Option<IosPushSound>,
+    subtitle: Option<Subtitle>,
+    content_available: Option<ContentAvailable>,
+    rich_text: Option<IosRichTextType>,
+}
+
+impl NotifySerialize for IosNotify {
+    fn serialize_field(&self) -> usize {
+        self.badge.serialize_field()
+            + self.category.serialize_field()
+            + self.sound.serialize_field()
+            + self.subtitle.serialize_field()
+            + self.content_available.serialize_field()
+            + self.rich_text.serialize_field()
     }
 
-    fn content_available(&self) -> Option<()> {
-        None
+    fn serialize<S: serde::Serializer>(
+        &self,
+        struct_serialize: &mut <S as serde::Serializer>::SerializeStruct,
+    ) -> Result<(), <S as serde::Serializer>::Error> {
+        self.badge.serialize::<S>(struct_serialize)?;
+        self.category.serialize::<S>(struct_serialize)?;
+        NotifySerialize::serialize::<S>(&self.sound, struct_serialize)?;
+        self.subtitle.serialize::<S>(struct_serialize)?;
+        self.content_available.serialize::<S>(struct_serialize)?;
+        self.rich_text.serialize::<S>(struct_serialize)?;
+        Ok(())
     }
 }
 
-pub(crate) struct IosNotifyWrapper<'ios, N: IosNotify> {
-    inner: &'ios N,
-}
-
-impl<'ios, N: IosNotify> IosNotifyWrapper<'ios, N> {
-    fn need_felid(&self) -> usize {
-        let mut init = 0;
-        // badge
-        if self.inner.get_badge().is_some() {
-            init += 2;
-        }
-        // apn
-        if self.inner.category().is_some() {
-            init += 1;
-        }
-
-        if self.inner.sound().is_some() {
-            init += 1;
-        }
-
-        if self.inner.rich_text().is_some() {
-            init += 3;
-        }
-
-        if self.inner.subtitle().is_some() {
-            init += 1;
-        }
-
-        if self.inner.content_available().is_some() {
-            init += 1;
-        }
-
-        init
-    }
-
-    #[allow(dead_code)]
-    pub(super) fn need_serialize(&self) -> bool {
-        self.need_felid() > 0
+impl SerializeInformation for IosNotify {
+    fn serialize_name() -> &'static str {
+        "iosNotify"
     }
 }
 
-impl<'ios, N: IosNotify> Serialize for IosNotifyWrapper<'ios, N> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut ios_notify = serializer.serialize_struct("IosNotify", self.need_felid())?;
-
-        // badge
-        if let Some(badge) = self.inner.get_badge() {
-            match badge {
-                IosBadgeType::Abs(num) => {
-                    ios_notify.serialize_field("badge", &num)?;
-                    ios_notify.serialize_field("badgeType", &1)?;
-                }
-                IosBadgeType::Adding(value) => {
-                    ios_notify.serialize_field("badge", &value)?;
-                    ios_notify.serialize_field("badgeType", &2)?;
-                }
-            }
-        }
-
-        // apn
-        if let Some(category) = self.inner.category() {
-            ios_notify.serialize_field("category", &category)?;
-        }
-        if let Some(sound) = self.inner.sound() {
-            ios_notify.serialize_field("sound", &sound)?;
-        }
-
-        // sub title
-        if let Some(sub_title) = self.inner.subtitle() {
-            ios_notify.serialize_field("subtitle", &sub_title)?;
-        }
-
-        // content available
-        if self.inner.content_available().is_some() {
-            ios_notify.serialize_field("contentAvailable", &1)?;
-        }
-
-        if let Some(rich_text) = self.inner.rich_text() {
-            ios_notify.serialize_field("mutableContent", &1)?;
-
-            match rich_text {
-                IosRichTextType::None => {}
-                IosRichTextType::Picture(text) => {
-                    ios_notify.serialize_field("attachmentType", &1)?;
-                    ios_notify.serialize_field("attachment", &text)?;
-                }
-                IosRichTextType::Video(v) => {
-                    ios_notify.serialize_field("attachmentType", &2)?;
-                    ios_notify.serialize_field("attachment", &v)?;
-                }
-                IosRichTextType::Voice(v) => {
-                    ios_notify.serialize_field("attachmentType", &3)?;
-                    ios_notify.serialize_field("attachment", &v)?;
-                }
-            }
-        }
-
-        ios_notify.end()
+impl IosNotify {
+    pub fn set_badge(&mut self, badge: IosBadgeType) -> &mut Self {
+        self.badge.replace(badge);
+        self
+    }
+    pub fn set_category(&mut self, category: Category) -> &mut Self {
+        self.category.replace(category);
+        self
+    }
+    pub fn set_sound(&mut self, sound: IosPushSound) -> &mut Self {
+        self.sound.replace(sound);
+        self
+    }
+    pub fn set_subtitle(&mut self, subtitle: Subtitle) -> &mut Self {
+        self.subtitle.replace(subtitle);
+        self
+    }
+    pub fn set_content_available(
+        &mut self,
+        content_available: Option<ContentAvailable>,
+    ) -> &mut Self {
+        self.content_available = content_available;
+        self
+    }
+    pub fn set_rich_text(&mut self, rich_text: IosRichTextType) -> &mut Self {
+        self.rich_text.replace(rich_text);
+        self
     }
 }
 
 #[cfg(test)]
 mod test {
 
-    use super::{
-        apn::{ApnPush, IosPushSound},
-        badge::{IosBadge, IosBadgeType},
-        rich_text::IosRichText,
-        IosNotify, IosNotifyWrapper,
-    };
+    use crate::push_notify::SerializeInformation;
 
-    struct Test;
-
-    impl IosNotify for Test {
-        fn subtitle(&self) -> Option<String> {
-            Some("Test Sub Title".into())
-        }
-
-        fn content_available(&self) -> Option<()> {
-            Some(())
-        }
-    }
-
-    impl IosBadge for Test {
-        fn get_badge(&self) -> Option<IosBadgeType> {
-            Some(IosBadgeType::Adding(12))
-        }
-    }
-
-    impl ApnPush for Test {
-        fn sound(&self) -> Option<IosPushSound> {
-            Some(IosPushSound::Custom("123456".into()))
-        }
-    }
-
-    impl IosRichText for Test {}
+    use super::{content_avaliable::ContentAvailable, IosNotify};
 
     #[test]
     fn test() {
-        let wrap = IosNotifyWrapper { inner: &Test };
+        let mut notify = IosNotify::default().into_notify();
 
-        let out = serde_json::to_string_pretty(&wrap).unwrap();
+        notify
+            .set_subtitle("Test Sub Title".into())
+            .set_content_available(Some(ContentAvailable))
+            .set_badge(super::IosBadgeType::Adding(12))
+            .set_sound(super::IosPushSound::Custom("123456".into()))
+            .set_rich_text(super::IosRichTextType::Picture("12123".into()));
+
+        let out = serde_json::to_string_pretty(&notify).unwrap();
 
         println!("{out}")
     }

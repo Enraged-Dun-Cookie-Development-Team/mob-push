@@ -91,29 +91,25 @@ impl StyleId {
 }
 
 #[derive(Debug, Serialize, TypedBuilder)]
+#[builder(field_defaults(default, setter(strip_option)))]
 pub struct CustomStyle {
     /// 样式序号
-    #[builder(default, setter(strip_option))]
     #[serde(rename = "styleNo", skip_serializing_if = "Option::is_none")]
     style: Option<StyleId>,
 
     /// 背景图Url
-    #[builder(default, setter(strip_option))]
     #[serde(rename = "backgroundUrl", skip_serializing_if = "Option::is_none")]
     background_url: Option<String>,
 
     ///小图标
-    #[builder(default, setter(strip_option))]
     #[serde(rename = "smallIcons", skip_serializing_if = "Option::is_none")]
     small_icons: Option<String>,
 
     ///按钮文案
-    #[builder(default, setter(strip_option))]
     #[serde(rename = "buttonCopy", skip_serializing_if = "Option::is_none")]
     button_copy: Option<String>,
 
     ///点击按钮跳转的链接
-    #[builder(default, setter(strip_option))]
     #[serde(rename = "buttonJumpUrl", skip_serializing_if = "Option::is_none")]
     button_jump_url: Option<String>,
 }

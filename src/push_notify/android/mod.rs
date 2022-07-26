@@ -15,16 +15,12 @@ pub mod image;
 pub mod sound;
 
 #[derive(Debug, TypedBuilder, Default)]
+#[builder(field_defaults(default, setter(strip_option)))]
 pub struct AndroidNotify {
-    #[builder(default, setter(strip_option))]
     notify_style: Option<NotifyStyle>,
-    #[builder(default, setter(strip_option))]
     badge: Option<Badge>,
-    #[builder(default, setter(strip_option))]
     image: Option<Image>,
-    #[builder(default, setter(strip_option))]
     sound: Option<Sound>,
-    #[builder(default, setter(strip_option))]
     warn: Option<Warn>,
 }
 
