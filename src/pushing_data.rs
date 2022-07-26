@@ -1,7 +1,5 @@
 use std::{borrow::Cow, hash::Hash};
 
-use serde::Serialize;
-
 use crate::push_notify::{android::AndroidNotify, ios::IosNotify};
 
 /// the trait of Entity for Push
@@ -25,18 +23,4 @@ pub trait PushEntity: 'static + Sync + Send {
 
     /// 获取当前推送消息的Ios端配置
     fn ios_notify(&self, _notify: &mut IosNotify) {}
-
-    #[deprecated]
-    type AndroidNotify: Serialize + 'static + Sync + Send;
-    
-    #[allow(deprecated)]
-    #[deprecated]
-    fn get_android_notify(&self) -> Self::AndroidNotify;
-    
-    #[deprecated]
-    type IosNotify: Serialize + 'static + Sync + Send;
-    
-    #[allow(deprecated)]
-    #[deprecated]
-    fn get_ios_notify(&self) -> Self::IosNotify;
 }

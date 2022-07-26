@@ -1,4 +1,4 @@
-use std::{any::TypeId, borrow::Cow};
+use std::borrow::Cow;
 
 use serde::{ser::SerializeStruct, Serialize};
 
@@ -47,7 +47,7 @@ impl Serialize for PushTarget {
     }
 }
 
-pub struct PushNotify<'p, A = (), I = ()>
+pub struct PushNotify<'p, A = Notify<AndroidNotify>, I = Notify<IosNotify>>
 where
     A: Serialize + 'static,
     I: Serialize + 'static,
@@ -59,19 +59,6 @@ where
 }
 
 impl<'p> PushNotify<'p> {
-    #[allow(deprecated)]
-    #[deprecated]
-    pub fn new<T: PushEntity>(data: &'p T) -> PushNotify<'p, T::AndroidNotify, T::IosNotify> {
-        PushNotify {
-            body: data.get_send_content().as_ref(),
-            android_notify: data.get_android_notify(),
-            ios_notify: data.get_ios_notify(),
-            title: data.get_title(),
-        }
-    }
-}
-
-impl<'p> PushNotify<'p, Notify<AndroidNotify>, Notify<IosNotify>> {
     pub fn new_with_builder<T: PushEntity>(data: &'p T) -> Self {
         let mut android_notify = AndroidNotify::default().into_notify();
         data.android_notify(&mut android_notify);
@@ -87,20 +74,16 @@ impl<'p> PushNotify<'p, Notify<AndroidNotify>, Notify<IosNotify>> {
     }
 }
 
-impl<'p, A, I> Serialize for PushNotify<'p, A, I>
-where
-    A: Serialize + 'static,
-    I: Serialize + 'static,
-{
+impl<'p> Serialize for PushNotify<'p> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         let mut len = 4;
-        if TypeId::of::<A>() != TypeId::of::<()>() {
+        if self.android_notify.need_serialize() {
             len += 1;
         }
-        if TypeId::of::<I>() != TypeId::of::<()>() {
+        if self.ios_notify.need_serialize() {
             len += 1;
         }
 
@@ -109,13 +92,12 @@ where
         notify.serialize_field("plats", &[1, 2])?;
         notify.serialize_field("content", &self.body)?;
         notify.serialize_field("type", &1)?;
-
         notify.serialize_field("title", &self.title)?;
 
-        if TypeId::of::<A>() != TypeId::of::<()>() {
+        if self.android_notify.need_serialize() {
             notify.serialize_field("androidNotify", &self.android_notify)?;
         }
-        if TypeId::of::<I>() != TypeId::of::<()>() {
+        if self.ios_notify.need_serialize() {
             notify.serialize_field("iosNotify", &self.ios_notify)?;
         }
 
@@ -123,20 +105,12 @@ where
     }
 }
 
-pub(crate) struct CreatePush<'p, A = (), I = ()>
-where
-    A: Serialize + 'static,
-    I: Serialize + 'static,
-{
+pub(crate) struct CreatePush<'p> {
     pub push_target: PushTarget,
-    pub push_notify: PushNotify<'p, A, I>,
+    pub push_notify: PushNotify<'p>,
 }
 
-impl<'p, A, I> Serialize for CreatePush<'p, A, I>
-where
-    A: Serialize + 'static,
-    I: Serialize + 'static,
-{
+impl<'p> Serialize for CreatePush<'p> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -169,7 +143,10 @@ pub(crate) struct ResBody {
 mod test_serde {
     use std::borrow::Cow;
 
-    use crate::config::load_from_test;
+    use crate::{
+        config::load_from_test,
+        push_notify::{android::AndroidNotify, ios::IosNotify, SerializeInformation},
+    };
 
     use super::CreatePush;
 
@@ -183,8 +160,8 @@ mod test_serde {
             },
             push_notify: super::PushNotify {
                 body: &String::from(r#"{"aab":11}"#),
-                android_notify: &(),
-                ios_notify: &(),
+                android_notify: AndroidNotify::default().into_notify(),
+                ios_notify: IosNotify::default().into_notify(),
                 title: Cow::Borrowed("12345"),
             },
         };
