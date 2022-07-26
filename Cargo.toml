@@ -1,10 +1,16 @@
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [package]
 name = "mob_push"
+description = "notify pusher using Mob Push"
 version = "0.1.0"
 edition = "2021"
+authors = ["FrozenString<frozenstringstable@gmail.com>"]
+documentation = "https://docs.rs/mob_push"
+repository = "https://github.com/Enraged-Dun-Cookie-Development-Team/mob-push"
+license = "AGPL-3.0"
+keywords = ["MobPush", "Notify"]
 
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["sync", "time", "test-util", "macros"] }
