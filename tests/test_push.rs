@@ -2,79 +2,88 @@
 use std::{
     convert::Infallible,
     fmt::Debug,
-    marker::{PhantomData, Send, Sync},
+    marker::{Send, Sync},
     time::Duration,
 };
 
 use mob_push::{
     self, load_config_from_default,
     push_notify::{
-        android::{sound::WarnSound, AndroidNotify, Badge, NotifyStyle},
-        SerializeInformation,
+        android::{sound::WarnSound, AndroidNotify, Badge, Image, NotifyStyle},
+        ios::{IosBadgeType, IosNotify, IosPushSound, IosRichTextType},
     },
     BoxResultFuture, MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
 };
 use serde::{ser::SerializeStruct, Serialize};
 use tokio::time;
 
-#[derive(Debug)]
-struct TestMsg<A = (), I = ()> {
-    android: A,
-    ios: I,
+
+#[derive(Default)]
+struct TestMsg {
+    android: Option<Box<dyn Fn(&mut AndroidNotify) -> &mut AndroidNotify + Sync + Send + 'static>>,
+    ios: Option<Box<dyn Fn(&mut IosNotify) -> &mut IosNotify + Sync + Send + 'static>>,
 }
 
-#[allow(clippy::derivable_impls)]
-impl Default for TestMsg {
-    fn default() -> Self {
-        Self {
-            android: (),
-            ios: (),
-        }
+impl Debug for TestMsg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TestMsg")
+            .field("android", &self.android.is_some())
+            .field("ios", &self.ios.is_some())
+            .finish()
     }
 }
-impl<A, I> TestMsg<A, I> {
-    fn set_android<AN>(self, android: AN) -> TestMsg<AN, I> {
+
+impl TestMsg {
+    fn set_android<AN>(self, android: AN) -> TestMsg
+    where
+        AN: Fn(&mut AndroidNotify) -> &mut AndroidNotify + Sync + Send + 'static,
+    {
+        let android = Box::new(android);
         TestMsg {
-            android,
+            android: Some(android),
             ios: self.ios,
         }
     }
 
-    fn set_ios<IN>(self, ios: IN) -> TestMsg<A, IN> {
+    fn set_ios<IN>(self, ios: IN) -> TestMsg
+    where
+        IN: Fn(&mut IosNotify) -> &mut IosNotify + Sync + Send + 'static,
+    {
+        let ios = Box::new(ios);
         TestMsg {
             android: self.android,
-            ios,
+            ios: Some(ios),
         }
     }
 }
 
-impl<A, I> PushEntity for TestMsg<A, I>
-where
-    A: Serialize + 'static + Send + Sync + Clone,
-    I: Serialize + 'static + Send + Sync + Clone,
-{
+impl PushEntity for TestMsg {
     type Resource = i32;
 
     fn get_resource(&self) -> &Self::Resource {
         &11
     }
 
-    type AndroidNotify = A;
-
-    fn get_android_notify(&self) -> Self::AndroidNotify {
-        self.android.clone()
-    }
-
-    type IosNotify = I;
-
-    fn get_ios_notify(&self) -> Self::IosNotify {
-        self.ios.clone()
-    }
-
     type Content = str;
 
     fn get_send_content(&self) -> &Self::Content {
         "小刻食堂测试信息"
+    }
+
+    fn get_title(&self) -> std::borrow::Cow<'_, str> {
+        "新饼来袭".into()
+    }
+
+    fn android_notify(&self, notify: &mut AndroidNotify) {
+        if let Some(an) = &self.android {
+            an(notify);
+        }
+    }
+
+    fn ios_notify(&self, notify: &mut mob_push::push_notify::ios::IosNotify) {
+        if let Some(ios_notify) = &self.ios {
+            ios_notify(notify);
+        }
     }
 }
 
@@ -111,24 +120,12 @@ impl SubscribeFilter for Filter {
     }
 }
 
-struct Manage<A = (), I = ()> {
-    _p: PhantomData<(A, I)>,
-}
+struct Manage;
 
-impl<A, I> Manage<A, I> {
-    fn new() -> Self {
-        Self { _p: PhantomData }
-    }
-}
-
-impl<A, I> UserSubscribeManage for Manage<A, I>
-where
-    A: Serialize + 'static + Send + Sync + Clone,
-    I: Serialize + 'static + Send + Sync + Clone,
-{
+impl UserSubscribeManage for Manage {
     type UserIdentify = User;
 
-    type PushData = TestMsg<A, I>;
+    type PushData = TestMsg;
 
     type Filter = Filter;
 
@@ -174,14 +171,12 @@ where
     }
 }
 
-fn test_pushing<A, I, F>(msg: F)
+fn test_pushing<F>(msg: F)
 where
-    A: Serialize + Sync + Send + 'static + Debug + Clone,
-    I: Serialize + Send + Sync + 'static + Debug + Clone,
-    F: FnOnce() -> TestMsg<A, I>,
+    F: FnOnce() -> TestMsg,
 {
     load_config_from_default();
-    let (mob_push, sender, mut err_rx) = MobPusher::new(Manage::<A, I>::new(), 8);
+    let (mob_push, sender, mut err_rx) = MobPusher::new(Manage, 8);
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()
@@ -208,76 +203,35 @@ where
 
 #[test]
 fn test_push() {
-    test_pushing(TestMsg::default);
-}
-
-#[derive(Debug,Clone)]
-struct AndroidBadge;
-
-impl Serialize for AndroidBadge {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut badge = serializer.serialize_struct("androidNotify", 2)?;
-
-        badge.serialize_field("androidBadgeType", &1)?;
-        badge.serialize_field("androidBadge", &0)?;
-
-        badge.end()
-    }
+    test_pushing(|| TestMsg::default());
 }
 
 /// 角标数值没啥意义
 /// 每次推送都是+1
 #[test]
 fn test_android_badge() {
-    test_pushing(|| TestMsg::default().set_android(AndroidBadge));
+    test_pushing(|| TestMsg::default().set_android(|an| an.set_badge(Badge::Add(1))));
 }
 
-
-#[derive(Debug,Clone)]
-struct AndroidWarn;
-
-impl Serialize for AndroidWarn {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut warn = serializer.serialize_struct("androidNotify", 1)?;
-        warn.serialize_field("warn", "12")?;
-
-        warn.end()
-    }
-}
-
+/// 小米似乎只有一种声音？
 #[test]
 fn test_android_warn() {
-    test_pushing(|| TestMsg::default().set_android(AndroidWarn));
+    test_pushing(|| {
+        TestMsg::default().set_android(|an| an.set_warn(WarnSound::Vibration & WarnSound::Prompt))
+    });
 }
 
 /// 使用image 推送可行
-
-#[derive(Debug,Clone)]
-struct AndroidIcon;
-
-impl Serialize for AndroidIcon {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let _img = "https://static.mob.com/www_mob_com/.nuxt/dist/client/img/62893e6.png";
-        let icon = "https://www.mob.com/favicon.ico";
-        let mut icon_only = serializer.serialize_struct("androidNotify", 1)?;
-        icon_only.serialize_field("image", icon)?;
-
-        icon_only.end()
-    }
-}
-
 #[test]
 fn test_icon() {
-    test_pushing(|| TestMsg::default().set_android(AndroidIcon));
+    test_pushing(|| {
+        TestMsg::default().set_android(|an| {
+            let _img = "https://static.mob.com/www_mob_com/.nuxt/dist/client/img/62893e6.png";
+            let icon = "https://www.mob.com/favicon.ico";
+
+            an.set_image(Image::new_image(icon))
+        })
+    });
 }
 
 /// - 长内容1
@@ -295,177 +249,50 @@ fn test_icon() {
 /// 可以传递多个，每个独立一行
 /// 会隐藏原有content
 ///
-
-#[derive(Debug,Clone)]
-struct AndroidStyle;
-
-impl Serialize for AndroidStyle {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut style = serializer.serialize_struct("androidNotify", 2)?;
-        // 1 长内容
-        // {
-        //     style.serialize_field(
-        //         "content",
-        //         &["555555555333333333333333333333333333333333333333333333\n欢迎来到小可食堂>>="],
-        //     )?;
-        //     style.serialize_field("style", &1)?;
-        // }
-
-        // 2 大图
-        {
-            style.serialize_field("content", &["https://i2.hdslb.com/bfs/archive/355b2e7886f337ff3d0951a057f0022be527f309.jpg@672w_378h_1c"])?;
-            style.serialize_field("style", &2)?;
-        }
-
-        // // 3 横幅
-        // {
-        //     style.serialize_field("content", &["来点饼干<h1>嗯嗯</h1>","横幅干啥的？","不知道"])?;
-        //     style.serialize_field("style", &3)?;
-        // }
-        style.end()
-    }
-}
-
 #[test]
 fn test_style() {
-    test_pushing(|| TestMsg::default().set_android(AndroidStyle));
-}
-
-
-#[derive(Debug,Clone)]
-struct Wrapper {
-    custom_style: CustomStyle,
-}
-
-impl Serialize for Wrapper {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut style = serializer.serialize_struct("androidNotify", 2)?;
-        style.serialize_field("customStyle", &self.custom_style)?;
-        style.serialize_field("style", &4)?;
-
-        style.end()
-    }
-}
-
-/// 用户定义的样式
-/// 不知道啥用
-/// 测试与普通推送几乎无区别
-
-#[derive(Debug,Clone)]
-struct CustomStyle;
-
-impl Serialize for CustomStyle {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut style = serializer.serialize_struct("CustomStyle", 2)?;
-
-        style.serialize_field("styleNo", &2)?;
-
-        style.serialize_field("buttonCopy", "open")?;
-
-        style.serialize_field("buttonJumpUrl", "intent:https://www.bilibili.com/;end")?;
-
-        style.end()
-    }
-}
-#[test]
-fn test_custom_style() {
     test_pushing(|| {
-        TestMsg::default().set_android(Wrapper {
-            custom_style: CustomStyle,
+        TestMsg::default().set_android(|an| {
+            let url = "https://i2.hdslb.com/bfs/archive/355b2e7886f337ff3d0951a057f0022be527f309.jpg@672w_378h_1c";
+            an
+                // .set_notify_style(NotifyStyle::new_long_content("555555555333333333333333333333333333333333333333333333\n欢迎来到小可食堂>>="))
+                // .set_notify_style(NotifyStyle::new_custom(notify_style::CustomStyle::builder().build()))
+                // .set_notify_style(NotifyStyle::new_banner(["来点饼干<h1>嗯嗯</h1>","横幅干啥的？","不知道"]))
+                .set_notify_style(NotifyStyle::new_big_vision(url))
         })
     });
 }
 
 #[test]
 fn test_android_notify_push() {
-    let notify = AndroidNotify::builder()
-     .notify_style(NotifyStyle::new_big_vision("https://i0.hdslb.com/bfs/archive/94bdaa89d9e1775f04bdfb705512a61e5de70628.jpg@672w_378h_1c"))
-     .badge(Badge::new_add(1))
-     .sound("114514".into())
-     .warn(WarnSound::Prompt & WarnSound::IndicatorLight & WarnSound::Vibration)
-    .build().into_notify();
+    test_pushing(|| {
+        TestMsg::default().set_android(|an|{
+            an
+            .set_notify_style(NotifyStyle::new_big_vision("https://i0.hdslb.com/bfs/archive/94bdaa89d9e1775f04bdfb705512a61e5de70628.jpg@672w_378h_1c"))
+     .set_badge(Badge::new_add(1))
+     .set_sound("114514".into())
+     .set_warn(WarnSound::Prompt & WarnSound::IndicatorLight & WarnSound::Vibration)
 
-    test_pushing(|| TestMsg::default().set_android(notify))
-}
-
-
-#[derive(Debug,Clone)]
-struct IosBadge;
-
-impl Serialize for IosBadge {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut badge = serializer.serialize_struct("IosNotify", 2)?;
-
-        badge.serialize_field("badge", &12)?;
-        badge.serialize_field("badgeType", &1)?;
-
-        badge.end()
-    }
+    })
+    })
 }
 
 #[test]
 fn test_ios_badge() {
-    test_pushing(|| TestMsg::default().set_ios(IosBadge));
-}
-
-
-#[derive(Debug,Clone)]
-struct IosSubTitle;
-
-impl Serialize for IosSubTitle {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut sub_title = serializer.serialize_struct("IosNotify", 1)?;
-
-        sub_title.serialize_field("subtitle", "小可试探副标题")?;
-
-        sub_title.end()
-    }
+    test_pushing(|| TestMsg::default().set_ios(|ios| ios.set_badge(IosBadgeType::Abs(12))));
 }
 
 #[test]
 fn test_ios_subtitle() {
-    test_pushing(|| TestMsg::default().set_ios(IosSubTitle))
-}
-
-
-#[derive(Debug,Clone)]
-struct IosSound;
-
-impl Serialize for IosSound {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut sound = serializer.serialize_struct("IosNotify", 1)?;
-
-        sound.serialize_field("sound", &())?;
-
-        sound.end()
-    }
+    test_pushing(|| TestMsg::default().set_ios(|ios| ios.set_subtitle("小可试探副标题".into())))
 }
 
 #[test]
 fn test_ios_no_sound() {
-    test_pushing(|| TestMsg::default().set_ios(IosSound))
+    test_pushing(|| TestMsg::default().set_ios(|ios| ios.set_sound(IosPushSound::None)))
 }
 
-
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 struct RichText;
 
 impl Serialize for RichText {
@@ -485,5 +312,8 @@ impl Serialize for RichText {
 
 #[test]
 fn test_ios_rich() {
-    test_pushing(|| TestMsg::default().set_ios(RichText))
+    let img = "https://i2.hdslb.com/bfs/archive/a995572283104e306e433240b47fba772c4ed3a0.jpg@672w_378h_1c";
+    test_pushing(|| {
+        TestMsg::default().set_ios(|ios| ios.set_rich_text(IosRichTextType::Picture(img.into())))
+    })
 }

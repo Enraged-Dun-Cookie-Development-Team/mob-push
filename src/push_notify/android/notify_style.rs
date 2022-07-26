@@ -39,9 +39,9 @@ impl NotifyStyle {
     pub fn new_banner<I, T>(contents: I) -> Self
     where
         T: Into<String>,
-        I: Iterator<Item = T>,
+        I: IntoIterator<Item = T>,
     {
-        Self::Banner(contents.map(Into::into).collect())
+        Self::Banner(contents.into_iter().map(Into::into).collect())
     }
     /// 创建一个 **用户定义** 的推送消息格式  
     pub fn new_custom(custom_style: CustomStyle) -> Self {

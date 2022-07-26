@@ -42,17 +42,7 @@ impl<M: UserSubscribeManage> MobPusher<M> {
             // request body
             let body = CreatePush {
                 push_target,
-                push_notify: {
-                    #[cfg(test)]
-                    #[allow(deprecated)]
-                    {
-                        PushNotify::new(&data)
-                    }
-                    #[cfg(not(test))]
-                    {
-                        PushNotify::new_with_builder(&data)
-                    }
-                },
+                push_notify: PushNotify::new_with_builder(&data),
             };
 
             let serde_body = serde_json::to_vec(&body)?;
