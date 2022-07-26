@@ -14,9 +14,7 @@ use mob_push::{
     },
     BoxResultFuture, MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
 };
-use serde::{ser::SerializeStruct, Serialize};
 use tokio::time;
-
 
 #[derive(Default)]
 struct TestMsg {
@@ -290,24 +288,6 @@ fn test_ios_subtitle() {
 #[test]
 fn test_ios_no_sound() {
     test_pushing(|| TestMsg::default().set_ios(|ios| ios.set_sound(IosPushSound::None)))
-}
-
-#[derive(Debug, Clone)]
-struct RichText;
-
-impl Serialize for RichText {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let mut rich = serializer.serialize_struct("IosNotify", 3)?;
-        let img = "https://i2.hdslb.com/bfs/archive/a995572283104e306e433240b47fba772c4ed3a0.jpg@672w_378h_1c";
-        rich.serialize_field("mutableContent", &1)?;
-        rich.serialize_field("attachmentType", &1)?;
-        rich.serialize_field("attachment", img)?;
-
-        rich.end()
-    }
 }
 
 #[test]
