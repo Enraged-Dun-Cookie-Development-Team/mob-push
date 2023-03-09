@@ -4,9 +4,11 @@ use serde::{ser::SerializeStruct, Serialize};
 
 use crate::{
     config::get_config,
-    push_notify::{android::AndroidNotify, ios::IosNotify, Notify, SerializeInformation},
+    push_notify::{
+        android::AndroidNotify, ios::IosNotify, Notify, NotifySerialize, SerializeInformation,
+    },
     user_subscribe::UserMobId,
-    PushEntity,
+    PushEntity, PushForward,
 };
 
 pub struct PushTarget {
@@ -44,6 +46,28 @@ impl Serialize for PushTarget {
         push_target.serialize_field("rids", &self.target_user)?;
 
         push_target.end()
+    }
+}
+
+pub struct Forward(PushForward);
+
+impl Forward {
+    pub fn new<T: PushEntity>(data: &T) -> Self {
+        let mut push_forward = PushForward::HomePage;
+        data.push_forward(&mut push_forward);
+
+        Self(push_forward)
+    }
+}
+
+impl Serialize for Forward {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut s = serializer.serialize_struct("pushForward", self.0.serialize_field())?;
+        NotifySerialize::serialize::<S>(&self.0, &mut s)?;
+        s.end()
     }
 }
 
@@ -108,6 +132,7 @@ impl<'p> Serialize for PushNotify<'p> {
 pub(crate) struct CreatePush<'p> {
     pub push_target: PushTarget,
     pub push_notify: PushNotify<'p>,
+    pub push_forward: Forward,
 }
 
 impl<'p> Serialize for CreatePush<'p> {
@@ -121,6 +146,7 @@ impl<'p> Serialize for CreatePush<'p> {
         push_body.serialize_field("appkey", &get_config().key)?;
         push_body.serialize_field("pushTarget", &self.push_target)?;
         push_body.serialize_field("pushNotify", &self.push_notify)?;
+        push_body.serialize_field("pushForward", &self.push_forward)?;
 
         push_body.end()
     }
@@ -164,6 +190,7 @@ mod test_serde {
                 ios_notify: IosNotify::default().into_notify(),
                 title: Cow::Borrowed("12345"),
             },
+            push_forward: super::Forward(crate::PushForward::HomePage),
         };
 
         let string = serde_json::to_string_pretty(&c).unwrap();

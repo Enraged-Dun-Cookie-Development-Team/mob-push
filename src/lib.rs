@@ -1,3 +1,5 @@
+mod push_forward;
+pub mod http_client;
 mod config;
 mod error;
 pub mod push_notify;
@@ -13,3 +15,4 @@ pub use config::{load_config_from_default, set_config, MobPushConfig};
 
 pub use error::MobPushError;
 pub use pusher::MobPusher;
+pub use push_forward::{PushForward,Scheme};

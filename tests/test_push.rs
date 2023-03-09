@@ -6,7 +6,9 @@ use std::{
 };
 
 use mob_push::{
-    self, load_config_from_default,
+    self,
+    http_client::{PushClient, PushRequestBuilder, PushResponse},
+    load_config_from_default,
     push_notify::{
         android::{sound::WarnSound, AndroidNotify, Badge, Image, NotifyStyle},
         ios::{IosBadgeType, IosNotify, IosPushSound, IosRichTextType},
@@ -14,6 +16,70 @@ use mob_push::{
     MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
 };
 use tokio::time;
+
+struct Client(reqwest::Client);
+struct RequestBuilder(reqwest::RequestBuilder);
+struct Response(reqwest::Response);
+
+impl PushClient for Client {
+    type RequestBuilder = RequestBuilder;
+
+    type Error = reqwest::Error;
+
+    fn post(&self, url: impl Into<url::Url>) -> Self::RequestBuilder {
+        RequestBuilder(self.0.post(url.into()))
+    }
+
+    fn send_request<'life0,'async_trait>(&'life0 self,req: <Self::RequestBuilder as mob_push::http_client::PushRequestBuilder> ::Request,) ->  core::pin::Pin<Box<dyn core::future::Future<Output = Result< <Self::RequestBuilder as mob_push::http_client::PushRequestBuilder> ::Response,Self::Error> > + core::marker::Send+'async_trait> >where 'life0:'async_trait,Self:'async_trait{
+        Box::pin(async {
+            let resp = self.0.execute(req).await?;
+            Ok(Response(resp))
+        })
+    }
+}
+
+impl PushRequestBuilder for RequestBuilder {
+    type Error = reqwest::Error;
+
+    type Request = reqwest::Request;
+
+    type Response = Response;
+
+    fn header(self, key: &'static str, value: &str) -> Self {
+        Self(self.0.header(key, value))
+    }
+
+    fn body(self, payload: Vec<u8>) -> Self {
+        Self(self.0.body(payload))
+    }
+
+    fn build(self) -> Result<Self::Request, Self::Error> {
+        self.0.build()
+    }
+}
+
+impl PushResponse for Response {
+    type Error = reqwest::Error;
+
+    fn status(&self) -> u16 {
+        self.0.status().as_u16()
+    }
+
+    fn bytes<'async_trait>(
+        self,
+    ) -> core::pin::Pin<
+        Box<
+            dyn core::future::Future<Output = Result<Vec<u8>, Self::Error>>
+                + core::marker::Send
+                + 'async_trait,
+        >,
+    >
+    where
+        Self: 'async_trait,
+    {
+        Box::pin(async { self.0.bytes().await.map(Into::into) })
+    }
+}
 
 #[derive(Default)]
 struct TestMsg {
@@ -64,7 +130,7 @@ impl PushEntity for TestMsg {
     type Content = str;
 
     fn get_send_content(&self) -> &Self::Content {
-        "小刻食堂测试信息"
+        "小刻食堂测试信息-----------------------------------------------------------------------很长"
     }
 
     fn get_title(&self) -> std::borrow::Cow<'_, str> {
@@ -154,9 +220,9 @@ impl UserSubscribeManage for Manage {
                 User {
                     mob_id: "65l063ct4qsghds".into(),
                 },
-                User {
-                    mob_id: "65kzw5w9iulerk0".into(),
-                },
+                // User {
+                //     mob_id: "65kzw5w9iulerk0".into(),
+                // },
                 User {
                     mob_id: "65l05lvwtep0fls".into(),
                 },
@@ -173,8 +239,9 @@ fn test_pushing<F>(msg: F)
 where
     F: FnOnce() -> TestMsg,
 {
+    let client = reqwest::Client::new();
     load_config_from_default();
-    let (mob_push, sender, mut err_rx) = MobPusher::new(Manage, 8);
+    let (mob_push, sender, mut err_rx) = MobPusher::new(Client(client), Manage, 8);
 
     let rt = tokio::runtime::Builder::new_current_thread()
         .enable_all()

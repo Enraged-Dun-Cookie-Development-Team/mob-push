@@ -1,48 +1,35 @@
 use std::time::Duration;
-
-use once_cell::sync::OnceCell;
-use reqwest::{header::HeaderMap, Client};
 use tokio::time::interval;
 
-use crate::{config::get_config, error::MobPushError, PushEntity, UserSubscribeManage};
+use crate::{
+    config::get_config,
+    error::MobPushError,
+    http_client::{PushClient, PushRequestBuilder, PushResponse},
+    PushEntity, UserSubscribeManage, pusher::push_model::Forward,
+};
 
 use super::{
     push_model::{CreatePush, PushNotify, PushTarget, Respond},
     MobPusher,
 };
 
-static CLIENT: OnceCell<Client> = OnceCell::new();
 
-fn get_client() -> Result<&'static Client, reqwest::Error> {
-    CLIENT.get_or_try_init(|| {
-        let headers = {
-            let mut map = HeaderMap::new();
-            map.append(
-                reqwest::header::CONTENT_TYPE,
-                "application/json".parse().unwrap(),
-            );
-
-            map.append("key", get_config().key.parse().unwrap());
-            map
-        };
-
-        Client::builder().default_headers(headers).build()
-    })
-}
-
-impl<M: UserSubscribeManage> MobPusher<M> {
+impl<M: UserSubscribeManage,C:PushClient> MobPusher<M,C> {
     async fn pushing(
+        client: &C,
         data: M::PushData,
         mut users: impl Iterator<Item = M::UserIdentify>,
-    ) -> Result<(), MobPushError<M>> {
-        let client = get_client()?;
-
+    ) -> Result<(), MobPushError<M,C>>
+    where
+        C: PushClient,
+    {
         let mut timer = interval(Duration::from_millis(500));
         while let Some(push_target) = PushTarget::new(&mut users) {
             // request body
             let body = CreatePush {
                 push_target,
                 push_notify: PushNotify::new_with_builder(&data),
+                push_forward : Forward::new(&data)
             };
 
             let serde_body = serde_json::to_vec(&body)?;
@@ -62,15 +49,19 @@ impl<M: UserSubscribeManage> MobPusher<M> {
             println!("{md5:x}");
 
             // request
-            let resp = client
-                .post("http://api.push.mob.com/v3/push/createPush")
+            let req = client
+                .post(url::Url::parse("http://api.push.mob.com/v3/push/createPush").unwrap())
+                .default_headers()
                 .header("sign", &format!("{md5:x}"))
                 .body(serde_body)
-                .send()
-                .await?;
+                .build()
+                .map_err(MobPushError::Request)
+                ?;
+
+            let resp = client.send_request(req).await.map_err(MobPushError::Request)?;
 
             // handle respond
-            let resp = resp.bytes().await?;
+            let resp = resp.bytes().await.map_err(MobPushError::Request)?;
 
             let resp: Respond = serde_json::from_slice(&resp)?;
 
@@ -80,7 +71,7 @@ impl<M: UserSubscribeManage> MobPusher<M> {
                 200 => {}
                 state => {
                     let msg = resp.error.unwrap();
-                    Err(MobPushError::<M>::Mob { state, msg })?;
+                    Err(MobPushError::Mob { state, msg })?;
                 }
             };
 
@@ -91,15 +82,18 @@ impl<M: UserSubscribeManage> MobPusher<M> {
         Ok(())
     }
 
-    pub async fn start_up(mut self) {
+    pub async fn start_up(mut self)
+    where
+        C::Error : std::error::Error,
+    {
         let mut timer = interval(Duration::from_millis(500));
         while let Some(data) = self.income_channel.recv().await {
             let error_sender = self.error_send.clone();
             let task = async {
                 let subscribers = self.manage.fetch_all_subscriber(data.get_resource());
                 let subscribers = subscribers.await.map_err(MobPushError::Manage)?;
-                Self::pushing(data, subscribers.into_iter()).await?;
-                Result::<_, MobPushError<M>>::Ok(())
+                Self::pushing(&self.client,data, subscribers.into_iter()).await?;
+                Result::<_, MobPushError<_,_>>::Ok(())
             };
             match task.await {
                 Ok(_) => {}
