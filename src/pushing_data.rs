@@ -1,6 +1,9 @@
 use std::{borrow::Cow, hash::Hash};
 
-use crate::{push_notify::{android::AndroidNotify, ios::IosNotify}, PushForward};
+use crate::{
+    push_notify::{android::AndroidNotify, ios::IosNotify},
+    PushForward,
+};
 
 /// the trait of Entity for Push
 pub trait PushEntity: 'static + Sync + Send {
@@ -24,5 +27,5 @@ pub trait PushEntity: 'static + Sync + Send {
     /// 获取当前推送消息的Ios端配置
     fn ios_notify(&self, _notify: &mut IosNotify) {}
 
-    fn push_forward(&self, _push_forward:&mut PushForward){}
+    fn push_forward(&self, _push_forward: &mut PushForward) {}
 }

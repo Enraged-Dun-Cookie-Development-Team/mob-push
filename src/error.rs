@@ -58,7 +58,7 @@ impl<M, C> std::error::Error for MobPushError<M, C>
 where
     M: UserSubscribeManage,
     C: PushClient,
-    C::Error:std::error::Error
+    C::Error: std::error::Error,
 {
 }
 

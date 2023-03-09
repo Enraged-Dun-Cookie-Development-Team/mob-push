@@ -15,7 +15,7 @@ pub trait PushClient: Sized {
     ) -> Result<<Self::RequestBuilder as PushRequestBuilder>::Response, Self::Error>;
 }
 
-pub trait PushRequestBuilder:Sized {
+pub trait PushRequestBuilder: Sized {
     type Error;
     type Request;
     type Response: PushResponse<Error = Self::Error>;

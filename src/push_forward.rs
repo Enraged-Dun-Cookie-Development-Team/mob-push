@@ -5,7 +5,6 @@ use serde_json::Value;
 use typed_builder::TypedBuilder;
 use url::Url;
 
-
 use crate::push_notify::NotifySerialize;
 
 #[derive(Debug)]
@@ -17,19 +16,19 @@ pub enum PushForward {
 }
 
 impl PushForward {
-    pub fn new_to_home_page()->Self{
+    pub fn new_to_home_page() -> Self {
         Self::HomePage
     }
 
-    pub fn new_to_link(url:Url)->Self{
+    pub fn new_to_link(url: Url) -> Self {
         Self::Link(url)
     }
 
-    pub fn new_to_scheme(scheme:Scheme)->Self{
+    pub fn new_to_scheme(scheme: Scheme) -> Self {
         Self::Scheme(scheme)
     }
 
-    pub fn new_to_internet(url:Url)->Self{
+    pub fn new_to_internet(url: Url) -> Self {
         Self::Internet(url)
     }
 }
@@ -39,7 +38,7 @@ impl NotifySerialize for PushForward {
         match self {
             PushForward::HomePage => 1,
             PushForward::Link(_) => 2,
-            PushForward::Scheme(Scheme {  uri, value ,..}) => {
+            PushForward::Scheme(Scheme { uri, value, .. }) => {
                 2 + if uri.is_none() { 1 } else { 0 } + if value.is_none() { 1 } else { 0 }
             }
             PushForward::Internet(_) => 2,
@@ -65,18 +64,15 @@ impl NotifySerialize for PushForward {
             PushForward::Link(url) => struct_serialize.serialize_field("url", url)?,
             PushForward::Scheme(Scheme { scheme, uri, value }) => {
                 struct_serialize.serialize_field("scheme", scheme)?;
-                if let Some(url) = uri{
-                    
+                if let Some(url) = uri {
                     struct_serialize.serialize_field("url", url)?;
                 }
 
-                if let Some(map) = value{
-                    struct_serialize.serialize_field("schemeDataList", &map.iter().collect::<Vec<_>>())?;
-
+                if let Some(map) = value {
+                    struct_serialize
+                        .serialize_field("schemeDataList", &map.iter().collect::<Vec<_>>())?;
                 }
-                ()
-
-            },
+            }
             PushForward::Internet(url) => struct_serialize.serialize_field("intentUrl", url)?,
         };
 
@@ -84,7 +80,7 @@ impl NotifySerialize for PushForward {
     }
 }
 
-#[derive(Debug,TypedBuilder)]
+#[derive(Debug, TypedBuilder)]
 pub struct Scheme {
     scheme: Url,
     uri: Option<Url>,

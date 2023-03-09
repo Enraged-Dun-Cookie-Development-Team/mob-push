@@ -5,7 +5,8 @@ use crate::{
     config::get_config,
     error::MobPushError,
     http_client::{PushClient, PushRequestBuilder, PushResponse},
-    PushEntity, UserSubscribeManage, pusher::push_model::Forward,
+    pusher::push_model::Forward,
+    PushEntity, UserSubscribeManage,
 };
 
 use super::{
@@ -13,13 +14,12 @@ use super::{
     MobPusher,
 };
 
-
-impl<M: UserSubscribeManage,C:PushClient> MobPusher<M,C> {
+impl<M: UserSubscribeManage, C: PushClient> MobPusher<M, C> {
     async fn pushing(
         client: &C,
         data: M::PushData,
         mut users: impl Iterator<Item = M::UserIdentify>,
-    ) -> Result<(), MobPushError<M,C>>
+    ) -> Result<(), MobPushError<M, C>>
     where
         C: PushClient,
     {
@@ -29,7 +29,7 @@ impl<M: UserSubscribeManage,C:PushClient> MobPusher<M,C> {
             let body = CreatePush {
                 push_target,
                 push_notify: PushNotify::new_with_builder(&data),
-                push_forward : Forward::new(&data)
+                push_forward: Forward::new(&data),
             };
 
             let serde_body = serde_json::to_vec(&body)?;
@@ -55,10 +55,12 @@ impl<M: UserSubscribeManage,C:PushClient> MobPusher<M,C> {
                 .header("sign", &format!("{md5:x}"))
                 .body(serde_body)
                 .build()
-                .map_err(MobPushError::Request)
-                ?;
+                .map_err(MobPushError::Request)?;
 
-            let resp = client.send_request(req).await.map_err(MobPushError::Request)?;
+            let resp = client
+                .send_request(req)
+                .await
+                .map_err(MobPushError::Request)?;
 
             // handle respond
             let resp = resp.bytes().await.map_err(MobPushError::Request)?;
@@ -84,7 +86,7 @@ impl<M: UserSubscribeManage,C:PushClient> MobPusher<M,C> {
 
     pub async fn start_up(mut self)
     where
-        C::Error : std::error::Error,
+        C::Error: std::error::Error,
     {
         let mut timer = interval(Duration::from_millis(500));
         while let Some(data) = self.income_channel.recv().await {
@@ -92,8 +94,8 @@ impl<M: UserSubscribeManage,C:PushClient> MobPusher<M,C> {
             let task = async {
                 let subscribers = self.manage.fetch_all_subscriber(data.get_resource());
                 let subscribers = subscribers.await.map_err(MobPushError::Manage)?;
-                Self::pushing(&self.client,data, subscribers.into_iter()).await?;
-                Result::<_, MobPushError<_,_>>::Ok(())
+                Self::pushing(&self.client, data, subscribers.into_iter()).await?;
+                Result::<_, MobPushError<_, _>>::Ok(())
             };
             match task.await {
                 Ok(_) => {}
