@@ -3,13 +3,14 @@
 [package]
 name = "mob_push"
 description = "notify pusher using Mob Push"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["FrozenString<frozenstringstable@gmail.com>"]
 documentation = "https://docs.rs/mob_push"
 repository = "https://github.com/Enraged-Dun-Cookie-Development-Team/mob-push"
 license-file = "LICENSE"
 keywords = ["MobPush", "Notify"]
+readme = "./readme.md"
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--cfg", "docsrs"]

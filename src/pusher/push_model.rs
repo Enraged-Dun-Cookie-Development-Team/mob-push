@@ -17,16 +17,10 @@ pub struct PushTarget {
 
 impl PushTarget {
     pub fn new(user_iter: &mut impl Iterator<Item = impl UserMobId>) -> Option<Self> {
-        let mut vec = Vec::with_capacity(1000);
-        for _ in 0..1000 {
-            if let Some(user) = user_iter.next() {
-                let user = user.get_mob_id().to_string();
-                vec.push(user);
-            } else {
-                break;
-            }
-        }
-
+        let vec = user_iter.take(1000)
+        .map(|user|user.get_mob_id().to_string())
+        .collect::<Vec<_>>();
+    
         if vec.is_empty() {
             None
         } else {

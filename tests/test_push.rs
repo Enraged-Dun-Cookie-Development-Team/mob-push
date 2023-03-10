@@ -217,9 +217,9 @@ impl UserSubscribeManage for Manage {
     ) -> Result<Vec<Self::UserIdentify>, Self::Err> {
         let resp = if data_resource == &11 || data_resource == &15 {
             vec![
-                User {
-                    mob_id: "65l063ct4qsghds".into(),
-                },
+                // User {
+                //     mob_id: "65l063ct4qsghds".into(),
+                // },
                 // User {
                 //     mob_id: "65kzw5w9iulerk0".into(),
                 // },
