@@ -10,7 +10,9 @@ use mob_push::{
     http_client::{PushClient, PushRequestBuilder, PushResponse},
     load_config_from_default,
     push_notify::{
-        android::{sound::WarnSound, AndroidNotify, Badge, Image, NotifyStyle},
+        android::{
+            notify_style::CustomStyle, sound::WarnSound, AndroidNotify, Badge, Image, NotifyStyle,
+        },
         ios::{IosBadgeType, IosNotify, IosPushSound, IosRichTextType},
     },
     MobPusher, PushEntity, SubscribeFilter, UserMobId, UserSubscribeManage,
@@ -321,7 +323,9 @@ fn test_style() {
             let url = "https://i2.hdslb.com/bfs/archive/355b2e7886f337ff3d0951a057f0022be527f309.jpg@672w_378h_1c";
             an
                 // .set_notify_style(NotifyStyle::new_long_content("555555555333333333333333333333333333333333333333333333\n欢迎来到小可食堂>>="))
-                // .set_notify_style(NotifyStyle::new_custom(notify_style::CustomStyle::builder().build()))
+//                 .set_notify_style(NotifyStyle::new_custom(CustomStyle::builder().button_copy("copy".to_string()).background_url("//i2.hdslb.com/bfs/archive/f84c09db27e1124ef3e88fb666a35335b140a857.jpg@672w_378h_1c_!web-home-common-cover".to_string())
+// .button_jump_url("https://www.bilibili.com/".to_string())                
+//                 .build()))
                 // .set_notify_style(NotifyStyle::new_banner(["来点饼干<h1>嗯嗯</h1>","横幅干啥的？","不知道"]))
                 .set_notify_style(NotifyStyle::new_big_vision(url))
         })
